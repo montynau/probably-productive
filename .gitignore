@@ -40,6 +40,10 @@ fastlane/test_output
 # Previews
 **/Preview\ Content/Preview\ Assets.xcassets/**
 
+# Project instructions (local only)
+CLAUDE.md
+SwiftData.md
+
 # SwiftData (local database — not committed)
 *.sqlite
 *.sqlite-shm
