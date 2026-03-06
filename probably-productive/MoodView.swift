@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 // MARK: - Calendar Tab
 
@@ -33,6 +34,10 @@ struct MoodView: View {
             List {
                 todaySection
 
+                Section("This Week") {
+                    MoodChartView(store: store)
+                }
+
                 Section {
                     Picker("", selection: $calendarTab) {
                         ForEach(CalendarTab.allCases, id: \.self) { tab in
@@ -54,24 +59,6 @@ struct MoodView: View {
             }
             .navigationTitle("Mood")
             .searchable(text: $searchText, prompt: "Search journal")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button("Test XP") {
-                        burstAmount = 75
-                        burstMessage = "20 days logged this month!"
-                        showingBurst = true
-                        withAnimation(.spring(duration: 0.4)) { showingXPToast = true }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            habitStore.addXP(75)
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 3.2) {
-                            withAnimation(.easeOut(duration: 0.4)) { showingXPToast = false }
-                        }
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                }
-            }
         }
         .overlay {
             if showingBurst {
@@ -303,7 +290,7 @@ struct MoodView: View {
                 ContentUnavailableView(
                     "No entries yet",
                     systemImage: "face.smiling",
-                    description: Text("Start logging your mood above")
+                    description: Text("How are you feeling? (Be honest, no one's watching)")
                 )
             }
         }
@@ -542,6 +529,65 @@ struct MoodDayCell: View {
                     isToday ? Color.accentColor.opacity(0.08) : .clear
                 )
         )
+    }
+}
+
+// MARK: - Mood Chart
+
+struct MoodChartView: View {
+    var store: MoodStore
+
+    private var last7Days: [(label: String, dateString: String, value: Int?)] {
+        let calendar = Calendar.current
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEEE"
+        return (0..<7).reversed().map { offset in
+            let date = calendar.date(byAdding: .day, value: -offset, to: .now)!
+            let ds = MoodEntry.dateString(for: date)
+            let value = store.entry(for: ds).map { $0.mood.rawValue + 1 }
+            return (label: formatter.string(from: date), dateString: ds, value: value)
+        }
+    }
+
+    var body: some View {
+        Chart {
+            ForEach(last7Days, id: \.dateString) { day in
+                if let value = day.value {
+                    LineMark(
+                        x: .value("Day", day.label),
+                        y: .value("Mood", value)
+                    )
+                    .foregroundStyle(.green)
+                    .interpolationMethod(.catmullRom)
+
+                    PointMark(
+                        x: .value("Day", day.label),
+                        y: .value("Mood", value)
+                    )
+                    .foregroundStyle(.green)
+                }
+            }
+        }
+        .chartYScale(domain: 1...5)
+        .chartYAxis {
+            AxisMarks(values: [1, 2, 3, 4, 5]) { value in
+                AxisGridLine()
+                AxisValueLabel {
+                    let emojis = ["😣", "😕", "😐", "🙂", "😄"]
+                    if let v = value.as(Int.self), v >= 1 && v <= 5 {
+                        Text(emojis[v - 1]).font(.caption2)
+                    }
+                }
+            }
+        }
+        .chartXAxis {
+            AxisMarks { value in
+                AxisValueLabel()
+                    .font(.caption2)
+            }
+        }
+        .frame(height: 140)
+        .padding(.vertical, 4)
     }
 }
 

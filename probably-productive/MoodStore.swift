@@ -71,10 +71,17 @@ class MoodStore {
         var bonusEarned = 0
         var lastMessage = ""
 
+        let milestoneMessages: [Int: String] = [
+            20: "Barely tried, but tried!",
+            75: "Surprisingly consistent!",
+            150: "Who are you even?",
+            250: "Perfect month. Suspicious."
+        ]
+
         for threshold in thresholds(for: .now) where count >= threshold.days && !paid.contains(threshold.days) {
             paid.append(threshold.days)
             bonusEarned += threshold.xp
-            lastMessage = "\(threshold.days) days logged this month!"
+            lastMessage = milestoneMessages[threshold.xp] ?? "\(threshold.days) days logged!"
         }
 
         if bonusEarned > 0 {

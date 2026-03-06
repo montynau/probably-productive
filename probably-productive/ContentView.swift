@@ -24,7 +24,8 @@ struct ContentView: View {
 struct HabitsView: View {
     @Environment(HabitStore.self) private var store
     @State private var showingAddHabit = false
-    @State private var showingBurst = false
+    @State private var burstAmount: Int? = nil
+    @State private var burstID = UUID()
 
     var body: some View {
         NavigationStack {
@@ -33,11 +34,16 @@ struct HabitsView: View {
                     .padding(.horizontal)
                     .padding(.vertical, 12)
 
+                HabitsStatsBar(store: store)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+
                 List {
                     ForEach(store.habits) { habit in
                         HabitRow(habit: habit) {
                             let earned = store.toggle(habit)
-                            if earned { showingBurst = true }
+                            burstAmount = earned ? 10 : -10
+                            burstID = UUID()
                         }
                     }
                     .onDelete(perform: store.delete)
@@ -61,19 +67,65 @@ struct HabitsView: View {
             .overlay {
                 if store.habits.isEmpty {
                     ContentUnavailableView(
-                        "No habits yet",
+                        "Nothing here yet",
                         systemImage: "checkmark.circle",
-                        description: Text("Tap + to add your first habit")
+                        description: Text("Tap + and pretend you'll actually do it")
                     )
                 }
             }
         }
         .overlay {
-            if showingBurst {
-                XPBurstView(amount: 10) {
-                    showingBurst = false
+            if let amount = burstAmount {
+                XPBurstView(amount: amount) {
+                    burstAmount = nil
                 }
+                .id(burstID)
             }
+        }
+    }
+}
+
+// MARK: - Habits Stats Bar
+
+struct HabitsStatsBar: View {
+    var store: HabitStore
+
+    private var completedToday: Int {
+        store.habits.filter { $0.isCompletedToday() }.count
+    }
+    private var total: Int { store.habits.count }
+
+    private var message: String {
+        guard total > 0 else { return "" }
+        switch completedToday {
+        case 0:
+            return "0/\(total) done · Today's not going great, is it?"
+        case total:
+            return "\(completedToday)/\(total) done · Okay, maybe actually productive"
+        default:
+            let hints = [
+                "Keep going, almost there",
+                "Still counts as trying",
+                "Progress. Technically.",
+                "Not bad. Could be worse.",
+                "The couch can wait",
+                "You started, that's something",
+                "Momentum detected",
+                "Someone's on a roll. Kinda.",
+                "More than yesterday? Win.",
+                "The rest won't do themselves"
+            ]
+            let index = completedToday % hints.count
+            return "\(completedToday)/\(total) done · \(hints[index])"
+        }
+    }
+
+    var body: some View {
+        if total > 0 {
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
@@ -93,7 +145,7 @@ struct XPHeaderView: View {
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(.yellow.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
+                    .background(.green.opacity(0.2), in: RoundedRectangle(cornerRadius: 8))
                     .contentTransition(.numericText())
                 Spacer()
                 Text("\(displayedXP) / 100 XP")
@@ -109,7 +161,7 @@ struct XPHeaderView: View {
                     RoundedRectangle(cornerRadius: 6)
                         .fill(
                             LinearGradient(
-                                colors: [.yellow, .orange],
+                                colors: [.green, .mint],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -183,26 +235,42 @@ struct XPBurstView: View {
         }
     }()
 
+    private var isNegative: Bool { amount < 0 }
+
     var body: some View {
         ZStack {
-            ForEach(particles.indices, id: \.self) { i in
-                let p = particles[i]
-                Circle()
-                    .fill(p.color)
-                    .frame(width: p.size, height: p.size)
-                    .offset(
-                        x: animate ? cos(p.angle) * p.distance : 0,
-                        y: animate ? sin(p.angle) * p.distance : 0
-                    )
-                    .opacity(animate ? 0 : 1)
-                    .animation(.easeOut(duration: 0.7).delay(p.delay), value: animate)
+            if isNegative {
+                ForEach(particles.indices, id: \.self) { i in
+                    let p = particles[i]
+                    Text("🔥")
+                        .font(.system(size: p.size + 4))
+                        .offset(
+                            x: animate ? cos(p.angle) * p.distance : 0,
+                            y: animate ? sin(p.angle) * p.distance : 0
+                        )
+                        .opacity(animate ? 0 : 1)
+                        .animation(.easeOut(duration: 0.7).delay(p.delay), value: animate)
+                }
+            } else {
+                ForEach(particles.indices, id: \.self) { i in
+                    let p = particles[i]
+                    Circle()
+                        .fill(p.color)
+                        .frame(width: p.size, height: p.size)
+                        .offset(
+                            x: animate ? cos(p.angle) * p.distance : 0,
+                            y: animate ? sin(p.angle) * p.distance : 0
+                        )
+                        .opacity(animate ? 0 : 1)
+                        .animation(.easeOut(duration: 0.7).delay(p.delay), value: animate)
+                }
             }
 
             VStack(spacing: 6) {
-                Text("+\(amount) XP")
+                Text(isNegative ? "\(amount) XP" : "+\(amount) XP")
                     .font(.title.bold())
-                    .foregroundStyle(.yellow)
-                    .shadow(color: .orange, radius: 6)
+                    .foregroundStyle(isNegative ? .pink : .green)
+                    .shadow(color: isNegative ? .red.opacity(0.4) : .green.opacity(0.4), radius: 6)
 
                 if !message.isEmpty {
                     Text(message)
@@ -218,10 +286,13 @@ struct XPBurstView: View {
             .animation(.easeIn(duration: 1.0).delay(1.8), value: animate)
         }
         .allowsHitTesting(false)
-        .onAppear {
+        .task {
             animate = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.2) {
+            do {
+                try await Task.sleep(for: .seconds(3.2))
                 onFinished()
+            } catch {
+                // Task was cancelled (new burst started) — do nothing
             }
         }
     }
@@ -249,12 +320,32 @@ struct HabitRow: View {
             Spacer()
 
             if habit.currentStreak > 0 {
-                Label("\(habit.currentStreak)", systemImage: "flame.fill")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(.orange)
+                StreakDotsView(streak: habit.currentStreak)
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Streak Dots
+
+struct StreakDotsView: View {
+    let streak: Int
+    private let maxDots = 7
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(0..<min(streak, maxDots), id: \.self) { _ in
+                Circle()
+                    .fill(.orange)
+                    .frame(width: 8, height: 8)
+            }
+            if streak > maxDots {
+                Text("+\(streak - maxDots)")
+                    .font(.caption2.bold())
+                    .foregroundStyle(.orange)
+            }
+        }
     }
 }
 

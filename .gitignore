@@ -43,6 +43,10 @@ fastlane/test_output
 # Project instructions (local only)
 CLAUDE.md
 SwiftData.md
+ideas.md
+
+# Design assets (local only)
+Design/
 
 # SwiftData (local database — not committed)
 *.sqlite

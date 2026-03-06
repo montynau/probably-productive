@@ -45,6 +45,7 @@ class HabitStore {
             totalXP += 10
         } else {
             habit.completedDates.removeAll { $0 == today }
+            totalXP = max(0, totalXP - 10)
         }
         save()
         return completing

@@ -1,18 +1,21 @@
-# Probably Productive
+# ProbablyProductive
 
-A SwiftUI app for iOS, iPadOS, and macOS that helps you build habits and track your mood — with a simple XP-based progression system to keep you motivated.
+> *Maybe productive. Definitely trying.*
+
+A SwiftUI app for iOS, iPadOS, and macOS that helps you build habits and track your mood — without taking itself too seriously.
 
 ## Features
 
 ### Habits
 - Add and track daily habits
-- One-tap completion toggle
-- Streak counter for consecutive days
-- XP earned for every completed habit (+10 XP)
+- One-tap completion toggle with XP animations (+10 XP / -10 XP)
+- Streak counter visualized as dots
+- Sarcastic daily progress messages
 
 ### Mood
 - 5-level emoji mood picker (Very Bad → Great)
 - Optional notes — log what affected your mood
+- Weekly mood chart (SwiftCharts)
 - Weekly and monthly calendar views
 - Full history with search
 - Monthly XP bonuses for consistent logging
@@ -20,12 +23,14 @@ A SwiftUI app for iOS, iPadOS, and macOS that helps you build habits and track y
 ### Progression System
 - XP bar and level displayed across the app
 - Mood consistency bonuses scaled to each month's length
-- Animated XP burst on milestone achievements
+- Animated XP burst on completions and milestones
+- Humorous milestone messages
 
 ## Tech Stack
 
 - **SwiftUI** — UI framework
 - **SwiftData** — local persistence, ready for CloudKit sync
+- **SwiftCharts** — mood chart
 - **Swift 5.0** — language
 - **Targets** — iOS 26.2+, macOS 26.2+
 
