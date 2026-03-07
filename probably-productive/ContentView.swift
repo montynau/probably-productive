@@ -390,28 +390,26 @@ struct HabitRow: View {
             }
             .buttonStyle(.plain)
 
-            HStack(spacing: 10) {
-                Image(systemName: habit.iconName)
-                    .font(.body)
-                    .foregroundStyle(habit.color)
-                    .frame(width: 20)
+            Image(systemName: habit.iconName)
+                .font(.body)
+                .foregroundStyle(habit.color)
+                .frame(width: 20)
 
-                Text(habit.name)
-                    .font(.body)
-                    .foregroundStyle(Color.primary)
+            Text(habit.name)
+                .font(.body)
 
-                Spacer()
+            Spacer()
 
-                if habit.currentStreak > 0 {
-                    StreakDotsView(streak: habit.currentStreak)
-                }
-
-                Image(systemName: "chevron.right")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+            if habit.currentStreak > 0 {
+                StreakDotsView(streak: habit.currentStreak)
             }
-            .contentShape(Rectangle())
-            .onTapGesture { onTap() }
+
+            Button(action: onTap) {
+                Image(systemName: "info.circle")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.borderless)
         }
         .padding(.vertical, 4)
     }
@@ -769,9 +767,10 @@ struct HabitDetailSheet: View {
                     Circle()
                         .fill(completed ? AnyShapeStyle(habit.color) : AnyShapeStyle(.quaternary.opacity(0.5)))
                         .frame(height: 36)
-                        .overlay {
+                        .padding(isToday ? 2 : 0)
+                        .background {
                             if isToday {
-                                Circle().stroke(completed ? Color.white.opacity(0.7) : habit.color, lineWidth: 2.5)
+                                Circle().stroke(habit.color, lineWidth: 2)
                             }
                         }
                 }
