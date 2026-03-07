@@ -47,6 +47,7 @@ struct HabitsView: View {
                         }
                     }
                     .onDelete(perform: store.delete)
+                    .onMove(perform: store.move)
                 }
             }
             .navigationTitle("Habits")
@@ -58,10 +59,13 @@ struct HabitsView: View {
                         Image(systemName: "plus")
                     }
                 }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    EditButton()
+                }
             }
             .sheet(isPresented: $showingAddHabit) {
-                AddHabitSheet { name in
-                    store.add(name: name)
+                AddHabitSheet { name, colorName, iconName in
+                    store.add(name: name, colorName: colorName, iconName: iconName)
                 }
             }
             .overlay {
@@ -94,14 +98,16 @@ struct HabitsStatsBar: View {
         store.habits.filter { $0.isCompletedToday() }.count
     }
     private var total: Int { store.habits.count }
+    private var bestStreak: Int { store.habits.map { $0.currentStreak }.max() ?? 0 }
+    private var bestLongest: Int { store.habits.map { $0.longestStreak }.max() ?? 0 }
 
     private var message: String {
         guard total > 0 else { return "" }
         switch completedToday {
         case 0:
-            return "0/\(total) done · Today's not going great, is it?"
+            return "Today's not going great, is it?"
         case total:
-            return "\(completedToday)/\(total) done · Okay, maybe actually productive"
+            return "Okay, maybe actually productive"
         default:
             let hints: [String] = [
                 "Keep going, almost there",
@@ -116,16 +122,40 @@ struct HabitsStatsBar: View {
                 "The rest won't do themselves"
             ]
             let index = completedToday % hints.count
-            return "\(completedToday)/\(total) done · \(hints[index])"
+            return hints[index]
         }
     }
 
     var body: some View {
         if total > 0 {
-            Text(message)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(completedToday)/\(total) done")
+                        .font(.caption.bold())
+                        .foregroundStyle(.primary)
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if bestLongest > 0 {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        HStack(spacing: 3) {
+                            Image(systemName: "flame.fill")
+                                .foregroundStyle(.orange)
+                            Text("\(bestStreak > 0 ? bestStreak : bestLongest)")
+                                .fontWeight(.bold)
+                        }
+                        .font(.caption)
+                        Text(bestStreak > 0 ? "current" : "best")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 12)
+            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
         }
     }
 }
@@ -305,14 +335,19 @@ struct HabitRow: View {
     let onToggle: () -> Void
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             Button(action: onToggle) {
                 Image(systemName: habit.isCompletedToday() ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
-                    .foregroundStyle(habit.isCompletedToday() ? .green : .secondary)
+                    .foregroundStyle(habit.isCompletedToday() ? habit.color : Color.secondary)
                     .animation(.spring(duration: 0.2), value: habit.isCompletedToday())
             }
             .buttonStyle(.plain)
+
+            Image(systemName: habit.iconName)
+                .font(.body)
+                .foregroundStyle(habit.color)
+                .frame(width: 20)
 
             Text(habit.name)
                 .font(.body)
@@ -352,20 +387,97 @@ struct StreakDotsView: View {
 // MARK: - Add Habit Sheet
 
 struct AddHabitSheet: View {
-    let onAdd: (String) -> Void
+    let onAdd: (String, String, String) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
+    @State private var selectedColor = "blue"
+    @State private var selectedIcon = "checkmark"
     @FocusState private var focused: Bool
+
+    static let colorOptions: [(String, Color)] = [
+        ("red", .red), ("orange", .orange), ("yellow", .yellow), ("green", .green),
+        ("teal", .teal), ("blue", .blue), ("purple", .purple), ("pink", .pink)
+    ]
+
+    static let iconOptions: [String] = [
+        "checkmark", "star.fill", "heart.fill", "flame.fill",
+        "figure.walk", "dumbbell.fill", "fork.knife", "drop.fill",
+        "book.fill", "pencil", "music.note", "moon.fill",
+        "sun.max.fill", "leaf.fill", "bicycle", "brain.head.profile"
+    ]
+
+    private var selectedColorValue: Color {
+        Self.colorOptions.first { $0.0 == selectedColor }?.1 ?? .blue
+    }
 
     var body: some View {
         NavigationStack {
             Form {
-                Section {
+                Section("Habit name") {
                     TextField("e.g. Read for 20 minutes", text: $name)
                         .focused($focused)
+                }
+
+                Section("Color") {
+                    HStack(spacing: 10) {
+                        ForEach(Self.colorOptions, id: \.0) { colorName, color in
+                            Button {
+                                selectedColor = colorName
+                            } label: {
+                                Circle()
+                                    .fill(color)
+                                    .frame(width: 30, height: 30)
+                                    .overlay {
+                                        if selectedColor == colorName {
+                                            Circle().stroke(Color.white, lineWidth: 2.5)
+                                            Circle().stroke(color, lineWidth: 1).padding(-1.5)
+                                        }
+                                    }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                Section("Icon") {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 8), spacing: 8) {
+                        ForEach(Self.iconOptions, id: \.self) { icon in
+                            Button {
+                                selectedIcon = icon
+                            } label: {
+                                Image(systemName: icon)
+                                    .font(.body)
+                                    .foregroundStyle(selectedIcon == icon ? selectedColorValue : Color.secondary)
+                                    .frame(width: 36, height: 36)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(selectedIcon == icon ? selectedColorValue.opacity(0.15) : Color.clear)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                Section {
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(selectedColorValue.opacity(0.15))
+                                .frame(width: 44, height: 44)
+                            Image(systemName: selectedIcon)
+                                .foregroundStyle(selectedColorValue)
+                                .font(.title3)
+                        }
+                        Text(name.isEmpty ? "Your new habit" : name)
+                            .foregroundStyle(name.isEmpty ? Color.secondary : Color.primary)
+                    }
+                    .padding(.vertical, 4)
                 } header: {
-                    Text("Habit name")
+                    Text("Preview")
                 }
             }
             .navigationTitle("New Habit")
@@ -376,7 +488,7 @@ struct AddHabitSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
-                        onAdd(name)
+                        onAdd(name, selectedColor, selectedIcon)
                         dismiss()
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)

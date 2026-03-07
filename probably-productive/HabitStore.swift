@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import SwiftUI
 import Observation
 
 @Observable
@@ -24,14 +25,23 @@ class HabitStore {
     }
 
     func fetch() {
-        let descriptor = FetchDescriptor<Habit>()
+        let descriptor = FetchDescriptor<Habit>(sortBy: [SortDescriptor(\.sortOrder)])
         habits = (try? modelContext.fetch(descriptor)) ?? []
     }
 
-    func add(name: String) {
+    func add(name: String, colorName: String = "blue", iconName: String = "checkmark") {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
-        modelContext.insert(Habit(name: trimmed))
+        let habit = Habit(name: trimmed, colorName: colorName, iconName: iconName, sortOrder: habits.count)
+        modelContext.insert(habit)
+        save()
+    }
+
+    func move(from source: IndexSet, to destination: Int) {
+        habits.move(fromOffsets: source, toOffset: destination)
+        for (index, habit) in habits.enumerated() {
+            habit.sortOrder = index
+        }
         save()
     }
 
