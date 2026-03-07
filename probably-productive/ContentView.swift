@@ -390,29 +390,28 @@ struct HabitRow: View {
             }
             .buttonStyle(.plain)
 
-            Button(action: onTap) {
-                HStack(spacing: 10) {
-                    Image(systemName: habit.iconName)
-                        .font(.body)
-                        .foregroundStyle(habit.color)
-                        .frame(width: 20)
+            HStack(spacing: 10) {
+                Image(systemName: habit.iconName)
+                    .font(.body)
+                    .foregroundStyle(habit.color)
+                    .frame(width: 20)
 
-                    Text(habit.name)
-                        .font(.body)
-                        .foregroundStyle(Color.primary)
+                Text(habit.name)
+                    .font(.body)
+                    .foregroundStyle(Color.primary)
 
-                    Spacer()
+                Spacer()
 
-                    if habit.currentStreak > 0 {
-                        StreakDotsView(streak: habit.currentStreak)
-                    }
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                if habit.currentStreak > 0 {
+                    StreakDotsView(streak: habit.currentStreak)
                 }
+
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
             }
-            .buttonStyle(.plain)
+            .contentShape(Rectangle())
+            .onTapGesture { onTap() }
         }
         .padding(.vertical, 4)
     }
@@ -670,7 +669,7 @@ struct HabitDetailSheet: View {
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 7)
 
     private var last28Days: [Date] {
-        (0..<28).reversed().map { offset in
+        (0..<28).map { offset in
             Calendar.current.date(byAdding: .day, value: -offset, to: .now)!
         }
     }
@@ -772,7 +771,7 @@ struct HabitDetailSheet: View {
                         .frame(height: 36)
                         .overlay {
                             if isToday {
-                                Circle().stroke(habit.color, lineWidth: 2)
+                                Circle().stroke(completed ? Color.white.opacity(0.7) : habit.color, lineWidth: 2.5)
                             }
                         }
                 }
