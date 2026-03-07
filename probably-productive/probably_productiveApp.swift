@@ -10,11 +10,22 @@ import SwiftData
 
 @main
 struct probably_productiveApp: App {
+    let container: ModelContainer = {
+        do {
+            return try ModelContainer(
+                for: Habit.self, MoodEntry.self, AppState.self,
+                migrationPlan: AppMigrationPlan.self
+            )
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error)")
+        }
+    }()
+
     var body: some Scene {
         WindowGroup {
             RootView()
         }
-        .modelContainer(for: [Habit.self, MoodEntry.self, AppState.self])
+        .modelContainer(container)
     }
 }
 
