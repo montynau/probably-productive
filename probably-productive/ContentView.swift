@@ -32,48 +32,49 @@ struct HabitsView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                XPHeaderView(store: store)
-                    .padding(.horizontal)
-                    .padding(.vertical, 12)
-
-                HabitsStatsBar(store: store)
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-
-                List {
-                    ForEach(store.habits) { habit in
-                        HabitRow(habit: habit) {
-                            let earned = store.toggle(habit)
-                            burstAmount = earned ? 10 : -10
-                            burstID = UUID()
-                        } onTap: {
-                            selectedHabit = habit
-                        }
-                        .swipeActions(edge: .leading) {
-                            Button {
-                                editingHabit = habit
-                            } label: {
-                                Label("Edit", systemImage: "pencil")
-                            }
-                            .tint(.blue)
-                        }
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) {
-                                store.delete(habit)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                            Button {
-                                store.archive(habit)
-                            } label: {
-                                Label("Archive", systemImage: "archivebox")
-                            }
-                            .tint(.orange)
-                        }
+            List {
+                ForEach(store.habits) { habit in
+                    HabitRow(habit: habit) {
+                        let earned = store.toggle(habit)
+                        burstAmount = earned ? 10 : -10
+                        burstID = UUID()
+                    } onTap: {
+                        selectedHabit = habit
                     }
-                    .onMove(perform: store.move)
+                    .swipeActions(edge: .leading) {
+                        Button {
+                            editingHabit = habit
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        .tint(.blue)
+                    }
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            store.delete(habit)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        Button {
+                            store.archive(habit)
+                        } label: {
+                            Label("Archive", systemImage: "archivebox")
+                        }
+                        .tint(.orange)
+                    }
                 }
+                .onMove(perform: store.move)
+            }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 0) {
+                    XPHeaderView(store: store)
+                        .padding(.horizontal)
+                        .padding(.vertical, 12)
+                    HabitsStatsBar(store: store)
+                        .padding(.horizontal)
+                        .padding(.bottom, 10)
+                }
+                .background(.background)
             }
             .navigationTitle("Habits")
             .toolbar {
@@ -120,6 +121,7 @@ struct HabitsView: View {
                         systemImage: "checkmark.circle",
                         description: Text("Tap + and pretend you'll actually do it")
                     )
+                    .background(.background)
                 }
             }
         }
@@ -382,13 +384,13 @@ struct HabitRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Button(action: onToggle) {
-                Image(systemName: habit.isCompletedToday() ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundStyle(habit.isCompletedToday() ? habit.color : Color.secondary)
-                    .animation(.spring(duration: 0.2), value: habit.isCompletedToday())
-            }
-            .buttonStyle(.plain)
+            Image(systemName: habit.isCompletedToday() ? "checkmark.circle.fill" : "circle")
+                .font(.title2)
+                .foregroundStyle(habit.isCompletedToday() ? habit.color : Color.secondary)
+                .animation(.spring(duration: 0.2), value: habit.isCompletedToday())
+                .frame(width: 36, height: 44)
+                .contentShape(Rectangle())
+                .simultaneousGesture(TapGesture().onEnded { onToggle() })
 
             Image(systemName: habit.iconName)
                 .font(.body)
@@ -404,12 +406,12 @@ struct HabitRow: View {
                 StreakDotsView(streak: habit.currentStreak)
             }
 
-            Button(action: onTap) {
-                Image(systemName: "info.circle")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.borderless)
+            Image(systemName: "info.circle")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .frame(width: 36, height: 44)
+                .contentShape(Rectangle())
+                .simultaneousGesture(TapGesture().onEnded { onTap() })
         }
         .padding(.vertical, 4)
     }
