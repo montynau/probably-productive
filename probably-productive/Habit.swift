@@ -11,6 +11,8 @@ class Habit {
     var iconName: String
     var sortOrder: Int
 
+    var isArchived: Bool = false
+
     init(name: String, colorName: String = "blue", iconName: String = "checkmark", sortOrder: Int = 0) {
         self.id = UUID()
         self.name = name
@@ -18,6 +20,7 @@ class Habit {
         self.colorName = colorName
         self.iconName = iconName
         self.sortOrder = sortOrder
+        self.isArchived = false
     }
 
     var color: Color {

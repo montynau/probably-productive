@@ -6,6 +6,7 @@ import Observation
 @Observable
 class HabitStore {
     var habits: [Habit] = []
+    var archivedHabits: [Habit] = []
     var appState: AppState
 
     var totalXP: Int {
@@ -25,8 +26,19 @@ class HabitStore {
     }
 
     func fetch() {
-        let descriptor = FetchDescriptor<Habit>(sortBy: [SortDescriptor(\.sortOrder)])
+        let descriptor = FetchDescriptor<Habit>(
+            predicate: #Predicate { !$0.isArchived },
+            sortBy: [SortDescriptor(\.sortOrder)]
+        )
         habits = (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    func fetchArchived() {
+        let descriptor = FetchDescriptor<Habit>(
+            predicate: #Predicate { $0.isArchived },
+            sortBy: [SortDescriptor(\.name)]
+        )
+        archivedHabits = (try? modelContext.fetch(descriptor)) ?? []
     }
 
     func add(name: String, colorName: String = "blue", iconName: String = "checkmark") {
@@ -34,6 +46,31 @@ class HabitStore {
         guard !trimmed.isEmpty else { return }
         let habit = Habit(name: trimmed, colorName: colorName, iconName: iconName, sortOrder: habits.count)
         modelContext.insert(habit)
+        save()
+    }
+
+    func update(_ habit: Habit, name: String, colorName: String, iconName: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        habit.name = trimmed
+        habit.colorName = colorName
+        habit.iconName = iconName
+        save()
+    }
+
+    func archive(_ habit: Habit) {
+        habit.isArchived = true
+        save()
+    }
+
+    func unarchive(_ habit: Habit) {
+        habit.isArchived = false
+        habit.sortOrder = habits.count
+        save()
+    }
+
+    func delete(_ habit: Habit) {
+        modelContext.delete(habit)
         save()
     }
 
@@ -74,5 +111,6 @@ class HabitStore {
     private func save() {
         try? modelContext.save()
         fetch()
+        fetchArchived()
     }
 }
