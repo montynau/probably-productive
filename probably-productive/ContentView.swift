@@ -103,7 +103,7 @@ struct HabitsStatsBar: View {
         case total:
             return "\(completedToday)/\(total) done · Okay, maybe actually productive"
         default:
-            let hints = [
+            let hints: [String] = [
                 "Keep going, almost there",
                 "Still counts as trying",
                 "Progress. Technically.",

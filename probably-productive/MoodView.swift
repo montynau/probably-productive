@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import Charts
 
 // MARK: - Calendar Tab
@@ -48,10 +49,9 @@ struct MoodView: View {
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                 }
 
-                switch calendarTab {
-                case .week:
+                if calendarTab == .week {
                     weekSection
-                case .month:
+                } else {
                     monthSection
                 }
 
@@ -60,25 +60,32 @@ struct MoodView: View {
             .navigationTitle("Mood")
             .searchable(text: $searchText, prompt: "Search journal")
         }
-        .overlay {
-            if showingBurst {
-                XPBurstView(amount: burstAmount, message: burstMessage) {
-                    showingBurst = false
-                }
-            }
-        }
-        .overlay(alignment: .top) {
-            if showingXPToast {
-                XPHeaderView(store: habitStore)
-                    .padding(.horizontal)
-                    .padding(.vertical, 12)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
+        .overlay { burstOverlay }
+        .overlay(alignment: .top) { xpToastOverlay }
         .animation(.spring(duration: 0.4), value: showingXPToast)
+    }
+
+    @ViewBuilder
+    private var burstOverlay: some View {
+        if showingBurst {
+            XPBurstView(amount: burstAmount, message: burstMessage) {
+                showingBurst = false
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var xpToastOverlay: some View {
+        if showingXPToast {
+            let shape = RoundedRectangle(cornerRadius: 16)
+            XPHeaderView(store: habitStore)
+                .padding(.horizontal)
+                .padding(.vertical, 12)
+                .background(Material.regularMaterial, in: shape)
+                .padding(.horizontal)
+                .padding(.top, 8)
+                .transition(.move(edge: .top).combined(with: .opacity))
+        }
     }
 
     private func logMood(_ mood: MoodLevel, note: String = "") {
@@ -107,114 +114,132 @@ struct MoodView: View {
     var todaySection: some View {
         Section("Today") {
             if let entry = store.todayEntry, !isEditing {
-                HStack(spacing: 14) {
-                    Text(entry.mood.emoji)
-                        .font(.largeTitle)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(entry.mood.label)
-                            .font(.headline)
-                            .foregroundStyle(entry.mood.color)
-                        if !entry.note.isEmpty {
-                            Text(entry.note)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
-                        }
-                    }
-                    Spacer()
-                    Button("Edit") {
-                        noteText = entry.note
-                        selectedMood = entry.mood
-                        showNoteField = true
-                        isEditing = true
-                    }
-                    .font(.subheadline)
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 4)
+                todayEntryRow(entry: entry)
             } else {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(isEditing ? "Change your mood:" : "How are you feeling?")
+                moodPickerRow
+            }
+        }
+    }
+
+    private func todayEntryRow(entry: MoodEntry) -> some View {
+        HStack(spacing: 14) {
+            Text(entry.mood.emoji)
+                .font(.largeTitle)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.mood.label)
+                    .font(.headline)
+                    .foregroundStyle(entry.mood.color)
+                if !entry.note.isEmpty {
+                    Text(entry.note)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-
-                    HStack(spacing: 0) {
-                        ForEach(MoodLevel.allCases) { mood in
-                            Button {
-                                if showNoteField || isEditing {
-                                    selectedMood = mood
-                                } else {
-                                    logMood(mood)
-                                }
-                            } label: {
-                                VStack(spacing: 4) {
-                                    Text(mood.emoji)
-                                        .font(.system(size: 38))
-                                        .scaleEffect(selectedMood == mood ? 1.2 : 1.0)
-                                        .animation(.spring(duration: 0.2), value: selectedMood)
-                                    Text(mood.label)
-                                        .font(.system(size: 9))
-                                        .foregroundStyle(selectedMood == mood ? mood.color : .secondary)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.7)
-                                        .fontWeight(selectedMood == mood ? .semibold : .regular)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .opacity(selectedMood == nil || selectedMood == mood ? 1.0 : 0.3)
-                                .animation(.spring(duration: 0.2), value: selectedMood)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-
-                    if !isEditing {
-                        Button {
-                            showNoteField.toggle()
-                            if !showNoteField {
-                                noteText = ""
-                                selectedMood = nil
-                            }
-                        } label: {
-                            Label(
-                                showNoteField ? "Hide note" : "Add a note (optional)",
-                                systemImage: showNoteField ? "chevron.up" : "pencil.line"
-                            )
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    if showNoteField || isEditing {
-                        TextField("What affected your mood?", text: $noteText, axis: .vertical)
-                            .lineLimit(3...6)
-                            .textFieldStyle(.roundedBorder)
-
-                        HStack {
-                            Button("Cancel") {
-                                noteText = ""
-                                showNoteField = false
-                                isEditing = false
-                                selectedMood = nil
-                            }
-                            .buttonStyle(.bordered)
-                            Spacer()
-                            Button(isEditing ? "Save note" : "Log mood") {
-                                if let mood = selectedMood {
-                                    logMood(mood, note: noteText)
-                                }
-                                noteText = ""
-                                showNoteField = false
-                                isEditing = false
-                                selectedMood = nil
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .disabled(selectedMood == nil)
-                        }
-                    }
+                        .lineLimit(2)
                 }
-                .padding(.vertical, 4)
+            }
+            Spacer()
+            Button("Edit") {
+                noteText = entry.note
+                selectedMood = entry.mood
+                showNoteField = true
+                isEditing = true
+            }
+            .font(.subheadline)
+            .buttonStyle(.borderless)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var moodPickerRow: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(isEditing ? "Change your mood:" : "How are you feeling?")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            moodButtonRow
+
+            if !isEditing {
+                Button {
+                    showNoteField.toggle()
+                    if !showNoteField {
+                        noteText = ""
+                        selectedMood = nil
+                    }
+                } label: {
+                    Label(
+                        showNoteField ? "Hide note" : "Add a note (optional)",
+                        systemImage: showNoteField ? "chevron.up" : "pencil.line"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+
+            if showNoteField || isEditing {
+                noteAndSaveRow
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var moodButtonRow: some View {
+        HStack(spacing: 0) {
+            ForEach(MoodLevel.allCases) { mood in
+                Button {
+                    if showNoteField || isEditing {
+                        selectedMood = mood
+                    } else {
+                        logMood(mood)
+                    }
+                } label: {
+                    VStack(spacing: 4) {
+                        Text(mood.emoji)
+                            .font(.system(size: 38))
+                            .scaleEffect(selectedMood == mood ? 1.2 : 1.0)
+                            .animation(.spring(duration: 0.2), value: selectedMood)
+                        Text(mood.label)
+                            .font(.system(size: 9))
+                            .foregroundStyle(selectedMood == mood ? mood.color : Color.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .fontWeight(selectedMood == mood ? .semibold : .regular)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .opacity(selectedMood == nil || selectedMood == mood ? 1.0 : 0.3)
+                    .animation(.spring(duration: 0.2), value: selectedMood)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var noteAndSaveRow: some View {
+        VStack(spacing: 8) {
+            TextField("What affected your mood?", text: $noteText, axis: .vertical)
+                .lineLimit(3...6)
+                .textFieldStyle(.roundedBorder)
+
+            HStack {
+                Button("Cancel") {
+                    noteText = ""
+                    showNoteField = false
+                    isEditing = false
+                    selectedMood = nil
+                }
+                .buttonStyle(.bordered)
+                Spacer()
+                Button(isEditing ? "Save note" : "Log mood") {
+                    if let mood = selectedMood {
+                        logMood(mood, note: noteText)
+                    }
+                    noteText = ""
+                    showNoteField = false
+                    isEditing = false
+                    selectedMood = nil
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(selectedMood == nil)
             }
         }
     }
@@ -391,6 +416,29 @@ struct MoodMonthView: View {
         return days
     }
 
+    @ViewBuilder
+    private func gridCell(for date: Date?) -> some View {
+        if let date {
+            let ds = MoodEntry.dateString(for: date)
+            let isSelected = selectedDate == ds
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    selectedDate = isSelected ? nil : ds
+                }
+            } label: {
+                MoodDayCell(
+                    date: date,
+                    entry: store.entry(for: ds),
+                    isToday: ds == MoodEntry.dateString(for: .now),
+                    isSelected: isSelected
+                )
+            }
+            .buttonStyle(.plain)
+        } else {
+            Color.clear.frame(height: 44)
+        }
+    }
+
     var body: some View {
         VStack(spacing: 12) {
             // Month navigation
@@ -438,23 +486,7 @@ struct MoodMonthView: View {
             // Calendar grid
             LazyVGrid(columns: columns, spacing: 4) {
                 ForEach(Array(monthDays.enumerated()), id: \.offset) { _, date in
-                    if let date {
-                        let ds = MoodEntry.dateString(for: date)
-                        let entry = store.entry(for: ds)
-                        let isToday = ds == MoodEntry.dateString(for: .now)
-                        let isSelected = selectedDate == ds
-
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.15)) {
-                                selectedDate = isSelected ? nil : ds
-                            }
-                        } label: {
-                            MoodDayCell(date: date, entry: entry, isToday: isToday, isSelected: isSelected)
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        Color.clear.frame(height: 44)
-                    }
+                    gridCell(for: date)
                 }
             }
 
@@ -506,6 +538,12 @@ struct MoodDayCell: View {
         String(Calendar.current.component(.day, from: date))
     }
 
+    private var backgroundFill: Color {
+        if isSelected { return Color.accentColor.opacity(0.15) }
+        if isToday { return Color.accentColor.opacity(0.08) }
+        return .clear
+    }
+
     var body: some View {
         VStack(spacing: 2) {
             Text(dayNumber)
@@ -524,10 +562,7 @@ struct MoodDayCell: View {
         .frame(height: 44)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(
-                    isSelected ? Color.accentColor.opacity(0.15) :
-                    isToday ? Color.accentColor.opacity(0.08) : .clear
-                )
+                .fill(backgroundFill)
         )
     }
 }
@@ -544,7 +579,7 @@ struct MoodChartView: View {
         return (0..<7).reversed().map { offset in
             let date = calendar.date(byAdding: .day, value: -offset, to: .now)!
             let ds = MoodEntry.dateString(for: date)
-            let value = store.entry(for: ds).map { $0.mood.rawValue + 1 }
+            let value = store.entry(for: ds).map { $0.mood.rawValue }
             return (label: formatter.string(from: date), dateString: ds, value: value)
         }
     }
@@ -592,5 +627,6 @@ struct MoodChartView: View {
 }
 
 #Preview {
-    MoodView()
+    RootView()
+        .modelContainer(for: [Habit.self, MoodEntry.self, AppState.self], inMemory: true)
 }
