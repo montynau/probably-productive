@@ -7,31 +7,36 @@ A SwiftUI app for iOS, iPadOS, and macOS that helps you build habits and track y
 ## Features
 
 ### Habits
-- Add and track daily habits
+- Add, edit, archive, and reorder habits
+- Flexible repeat schedules: daily, weekdays, weekends, weekly, hourly, and more
+- Hourly habits with configurable interval and time window
 - One-tap completion toggle with XP animations (+10 XP / -10 XP)
-- Streak counter visualized as dots
+- "Later" section for habits not due yet — sorted by next due time
+- Streak counter visualized as orange dots
+- 28-day streak calendar + stats in habit detail view
 - Sarcastic daily progress messages
 
 ### Mood
 - 5-level emoji mood picker (Very Bad → Great)
-- Optional notes — log what affected your mood
-- Weekly mood chart (SwiftCharts)
-- Weekly and monthly calendar views
+- Optional notes per entry
 - Full history with search
 - Monthly XP bonuses for consistent logging
 
+### Calendar
+- Unified monthly calendar showing both mood and habit progress per day
+- Tap any day to see details
+
 ### Progression System
-- XP bar and level displayed across the app
-- Mood consistency bonuses scaled to each month's length
+- XP bar and level shown at the top of Habits
 - Animated XP burst on completions and milestones
 - Humorous milestone messages
 
 ## Tech Stack
 
 - **SwiftUI** — UI framework
-- **SwiftData** — local persistence, ready for CloudKit sync
+- **SwiftData** — local persistence (V1→V5 migration, ready for CloudKit)
 - **SwiftCharts** — mood chart
-- **Swift 5.0** — language
+- **Swift 5.0**
 - **Targets** — iOS 26.2+, macOS 26.2+
 
 ## Requirements

@@ -7,6 +7,7 @@ import Observation
 class HabitStore {
     var habits: [Habit] = []
     var archivedHabits: [Habit] = []
+    var notDueHabits: [Habit] = []
     var appState: AppState
 
     var totalXP: Int {
@@ -23,6 +24,7 @@ class HabitStore {
         self.modelContext = modelContext
         self.appState = appState
         fetch()
+        fetchArchived()
     }
 
     func fetch() {
@@ -30,7 +32,9 @@ class HabitStore {
             predicate: #Predicate { !$0.isArchived },
             sortBy: [SortDescriptor(\.sortOrder)]
         )
-        habits = (try? modelContext.fetch(descriptor)) ?? []
+        let all = (try? modelContext.fetch(descriptor)) ?? []
+        habits = all.filter { $0.isDue() }
+        notDueHabits = all.filter { !$0.isDue() }.sorted { $0.nextDueDate < $1.nextDueDate }
     }
 
     func fetchArchived() {
@@ -41,20 +45,28 @@ class HabitStore {
         archivedHabits = (try? modelContext.fetch(descriptor)) ?? []
     }
 
-    func add(name: String, colorName: String = "blue", iconName: String = "checkmark") {
+    func add(name: String, colorName: String = "blue", iconName: String = "checkmark", schedule: RepeatSchedule = .daily, scheduledTime: Date? = nil, scheduleEndTime: Date? = nil, hourlyInterval: Int = 2) {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
-        let habit = Habit(name: trimmed, colorName: colorName, iconName: iconName, sortOrder: habits.count)
+        let habit = Habit(name: trimmed, colorName: colorName, iconName: iconName, sortOrder: habits.count + notDueHabits.count)
+        habit.schedule = schedule
+        habit.scheduledTime = scheduledTime
+        habit.scheduleEndTime = scheduleEndTime
+        habit.hourlyInterval = hourlyInterval
         modelContext.insert(habit)
         save()
     }
 
-    func update(_ habit: Habit, name: String, colorName: String, iconName: String) {
+    func update(_ habit: Habit, name: String, colorName: String, iconName: String, schedule: RepeatSchedule, scheduledTime: Date?, scheduleEndTime: Date?, hourlyInterval: Int) {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         habit.name = trimmed
         habit.colorName = colorName
         habit.iconName = iconName
+        habit.schedule = schedule
+        habit.scheduledTime = scheduledTime
+        habit.scheduleEndTime = scheduleEndTime
+        habit.hourlyInterval = hourlyInterval
         save()
     }
 
@@ -85,13 +97,18 @@ class HabitStore {
     // Returns true if the habit was just completed (XP was earned)
     @discardableResult
     func toggle(_ habit: Habit) -> Bool {
-        let today = Habit.dateString(for: .now)
-        let completing = !habit.completedDates.contains(today)
+        let key: String
+        if habit.schedule == .hourly {
+            key = Habit.hourSlotKey(for: .now, interval: habit.hourlyInterval)
+        } else {
+            key = Habit.dateString(for: .now)
+        }
+        let completing = !habit.completedDates.contains(key)
         if completing {
-            habit.completedDates.append(today)
+            habit.completedDates.append(key)
             totalXP += 10
         } else {
-            habit.completedDates.removeAll { $0 == today }
+            habit.completedDates.removeAll { $0 == key }
             totalXP = max(0, totalXP - 10)
         }
         save()

@@ -13,6 +13,8 @@ struct ContentView: View {
                 .tabItem { Label("Habits", systemImage: "checkmark.circle") }
             MoodView()
                 .tabItem { Label("Mood", systemImage: "face.smiling") }
+            CalendarView()
+                .tabItem { Label("Calendar", systemImage: "calendar") }
         }
         .environment(habitStore)
         .environment(moodStore)
@@ -33,79 +35,136 @@ struct HabitsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    Image("AppLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 240)
+                        .padding(.horizontal, 16)
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    XPHeaderView(store: store)
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                    HabitsStatsBar(store: store)
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                }
+
                 ForEach(store.habits) { habit in
-                    HabitRow(habit: habit) {
-                        let earned = store.toggle(habit)
-                        burstAmount = earned ? 10 : -10
-                        burstID = UUID()
-                    } onTap: {
+                    Button {
                         selectedHabit = habit
+                    } label: {
+                        HabitRow(habit: habit) {
+                            let earned = store.toggle(habit)
+                            burstAmount = earned ? 10 : -10
+                            burstID = UUID()
+                        }
                     }
-                    .swipeActions(edge: .leading) {
-                        Button {
-                            editingHabit = habit
-                        } label: {
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        Button { editingHabit = habit } label: {
                             Label("Edit", systemImage: "pencil")
                         }
-                        .tint(.blue)
-                    }
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            store.delete(habit)
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                        Button {
-                            store.archive(habit)
-                        } label: {
+                        Button { store.archive(habit) } label: {
                             Label("Archive", systemImage: "archivebox")
                         }
-                        .tint(.orange)
+                        Divider()
+                        Button(role: .destructive) { store.delete(habit) } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
                     }
                 }
                 .onMove(perform: store.move)
-            }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                VStack(spacing: 0) {
-                    XPHeaderView(store: store)
-                        .padding(.horizontal)
-                        .padding(.vertical, 12)
-                    HabitsStatsBar(store: store)
-                        .padding(.horizontal)
-                        .padding(.bottom, 10)
+
+                if !store.notDueHabits.isEmpty {
+                    Section("Later") {
+                        ForEach(store.notDueHabits) { habit in                            Button { selectedHabit = habit } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: habit.iconName)
+                                    .font(.body)
+                                    .foregroundStyle(habit.color.opacity(0.5))
+                                    .frame(width: 20)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(habit.name)
+                                        .font(.body)
+                                        .foregroundStyle(.secondary)
+                                    HStack(spacing: 4) {
+                                        Text(habit.nextDueLabel)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        if habit.remainingTodayCount > 1 {
+                                            Text("· \(habit.remainingTodayCount) more today")
+                                                .font(.caption.bold())
+                                                .foregroundStyle(.green)
+                                        }
+                                    }
+                                }
+                                Spacer()
+                                if habit.currentStreak > 0 {
+                                    StreakDotsView(streak: habit.currentStreak)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                Button {
+                                    editingHabit = habit
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                Button {
+                                    store.archive(habit)
+                                } label: {
+                                    Label("Archive", systemImage: "archivebox")
+                                }
+                                Divider()
+                                Button(role: .destructive) {
+                                    store.delete(habit)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
+                        .moveDisabled(true)
+                    }
                 }
-                .background(.background)
             }
-            .navigationTitle("Habits")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
+            .environment(\.editMode, .constant(.active))
+            .toolbar(.hidden, for: .navigationBar)
+            .overlay(alignment: .topTrailing) {
+                HStack(spacing: 12) {
+                    if !store.archivedHabits.isEmpty {
+                        Button { showingArchived = true } label: {
+                            Image(systemName: "archivebox")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.primary)
+                                .frame(width: 36, height: 36)
+                                .background(.regularMaterial, in: Circle())
+                        }
+                    }
                     Button { showingAddHabit = true } label: {
                         Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .background(.green, in: Circle())
                     }
                 }
-                ToolbarItem(placement: .navigationBarLeading) {
-                    EditButton()
-                }
-                if !store.archivedHabits.isEmpty {
-                    ToolbarItem(placement: .bottomBar) {
-                        Button {
-                            showingArchived = true
-                        } label: {
-                            Label("Archived", systemImage: "archivebox")
-                                .font(.caption)
-                        }
-                        .foregroundStyle(.secondary)
-                    }
-                }
+                .padding(.top, 8)
+                .padding(.trailing, 16)
             }
             .sheet(isPresented: $showingAddHabit) {
-                AddHabitSheet { name, colorName, iconName in
-                    store.add(name: name, colorName: colorName, iconName: iconName)
+                AddHabitSheet { name, colorName, iconName, schedule, scheduledTime, endTime, interval in
+                    store.add(name: name, colorName: colorName, iconName: iconName, schedule: schedule, scheduledTime: scheduledTime, scheduleEndTime: endTime, hourlyInterval: interval)
                 }
             }
             .sheet(item: $editingHabit) { habit in
-                EditHabitSheet(habit: habit) { name, colorName, iconName in
-                    store.update(habit, name: name, colorName: colorName, iconName: iconName)
+                EditHabitSheet(habit: habit) { name, colorName, iconName, schedule, scheduledTime, endTime, interval in
+                    store.update(habit, name: name, colorName: colorName, iconName: iconName, schedule: schedule, scheduledTime: scheduledTime, scheduleEndTime: endTime, hourlyInterval: interval)
                 }
             }
             .sheet(item: $selectedHabit) { habit in
@@ -115,7 +174,7 @@ struct HabitsView: View {
                 ArchivedHabitsView()
             }
             .overlay {
-                if store.habits.isEmpty {
+                if store.habits.isEmpty && store.notDueHabits.isEmpty {
                     ContentUnavailableView(
                         "Nothing here yet",
                         systemImage: "checkmark.circle",
@@ -141,12 +200,14 @@ struct HabitsView: View {
 struct HabitsStatsBar: View {
     var store: HabitStore
 
+    private var allHabits: [Habit] { store.habits + store.notDueHabits }
+
     private var completedToday: Int {
-        store.habits.filter { $0.isCompletedToday() }.count
+        allHabits.filter { $0.isCompletedToday() }.count
     }
-    private var total: Int { store.habits.count }
-    private var bestStreak: Int { store.habits.map { $0.currentStreak }.max() ?? 0 }
-    private var bestLongest: Int { store.habits.map { $0.longestStreak }.max() ?? 0 }
+    private var total: Int { allHabits.count }
+    private var bestStreak: Int { allHabits.map { $0.currentStreak }.max() ?? 0 }
+    private var bestLongest: Int { allHabits.map { $0.longestStreak }.max() ?? 0 }
 
     private var message: String {
         guard total > 0 else { return "" }
@@ -380,38 +441,43 @@ struct XPBurstView: View {
 struct HabitRow: View {
     let habit: Habit
     let onToggle: () -> Void
-    let onTap: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: habit.isCompletedToday() ? "checkmark.circle.fill" : "circle")
-                .font(.title2)
-                .foregroundStyle(habit.isCompletedToday() ? habit.color : Color.secondary)
-                .animation(.spring(duration: 0.2), value: habit.isCompletedToday())
-                .frame(width: 36, height: 44)
-                .contentShape(Rectangle())
-                .simultaneousGesture(TapGesture().onEnded { onToggle() })
+            Button(action: onToggle) {
+                Image(systemName: habit.isCompletedToday() ? "checkmark.circle.fill" : "circle")
+                    .font(.title2)
+                    .foregroundStyle(habit.isCompletedToday() ? habit.color : Color.secondary)
+                    .animation(.spring(duration: 0.2), value: habit.isCompletedToday())
+                    .padding(.vertical, 10)
+                    .padding(.trailing, 4)
+            }
+            .buttonStyle(.borderless)
 
             Image(systemName: habit.iconName)
                 .font(.body)
                 .foregroundStyle(habit.color)
                 .frame(width: 20)
 
-            Text(habit.name)
-                .font(.body)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(habit.name)
+                    .font(.body)
+                if habit.schedule == .hourly {
+                    Text("\(habit.completedSlotsToday)/\(habit.todaySlotCount) today")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                } else if habit.schedule != .daily {
+                    Text(habit.schedule.displayName)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
 
             Spacer()
 
             if habit.currentStreak > 0 {
                 StreakDotsView(streak: habit.currentStreak)
             }
-
-            Image(systemName: "info.circle")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .frame(width: 36, height: 44)
-                .contentShape(Rectangle())
-                .simultaneousGesture(TapGesture().onEnded { onTap() })
         }
         .padding(.vertical, 4)
     }
@@ -442,12 +508,17 @@ struct StreakDotsView: View {
 // MARK: - Add Habit Sheet
 
 struct AddHabitSheet: View {
-    let onAdd: (String, String, String) -> Void
+    let onAdd: (String, String, String, RepeatSchedule, Date?, Date?, Int) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var selectedColor = "blue"
     @State private var selectedIcon = "checkmark"
+    @State private var selectedSchedule: RepeatSchedule = .daily
+    @State private var hasScheduledTime: Bool = false
+    @State private var scheduledTime: Date = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: .now) ?? .now
+    @State private var hourlyInterval: Int = 2
+    @State private var scheduleEndTime: Date = Calendar.current.date(bySettingHour: 22, minute: 0, second: 0, of: .now) ?? .now
     @FocusState private var focused: Bool
 
     static let colorOptions: [(String, Color)] = [
@@ -517,6 +588,26 @@ struct AddHabitSheet: View {
                     .padding(.vertical, 4)
                 }
 
+                Section("Schedule") {
+                    Picker("Repeat", selection: $selectedSchedule) {
+                        ForEach(RepeatSchedule.allCases, id: \.self) { schedule in
+                            Text(schedule.displayName).tag(schedule)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    if selectedSchedule == .hourly {
+                        Stepper("Every \(hourlyInterval)h", value: $hourlyInterval, in: 1...12)
+                        DatePicker("From", selection: $scheduledTime, displayedComponents: .hourAndMinute)
+                        DatePicker("To", selection: $scheduleEndTime, displayedComponents: .hourAndMinute)
+                    } else {
+                        Toggle("Scheduled Time", isOn: $hasScheduledTime)
+                        if hasScheduledTime {
+                            DatePicker("Time", selection: $scheduledTime, displayedComponents: .hourAndMinute)
+                        }
+                    }
+                }
+
                 Section {
                     HStack(spacing: 12) {
                         ZStack {
@@ -543,7 +634,15 @@ struct AddHabitSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
-                        onAdd(name, selectedColor, selectedIcon)
+                        onAdd(
+                            name.trimmingCharacters(in: .whitespaces),
+                            selectedColor,
+                            selectedIcon,
+                            selectedSchedule,
+                            selectedSchedule == .hourly ? scheduledTime : (hasScheduledTime ? scheduledTime : nil),
+                            selectedSchedule == .hourly ? scheduleEndTime : nil,
+                            hourlyInterval
+                        )
                         dismiss()
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -558,19 +657,29 @@ struct AddHabitSheet: View {
 
 struct EditHabitSheet: View {
     let habit: Habit
-    let onSave: (String, String, String) -> Void
+    let onSave: (String, String, String, RepeatSchedule, Date?, Date?, Int) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name: String
     @State private var selectedColor: String
     @State private var selectedIcon: String
+    @State private var selectedSchedule: RepeatSchedule
+    @State private var hasScheduledTime: Bool
+    @State private var scheduledTime: Date
+    @State private var hourlyInterval: Int
+    @State private var scheduleEndTime: Date
 
-    init(habit: Habit, onSave: @escaping (String, String, String) -> Void) {
+    init(habit: Habit, onSave: @escaping (String, String, String, RepeatSchedule, Date?, Date?, Int) -> Void) {
         self.habit = habit
         self.onSave = onSave
         _name = State(initialValue: habit.name)
         _selectedColor = State(initialValue: habit.colorName)
         _selectedIcon = State(initialValue: habit.iconName)
+        _selectedSchedule = State(initialValue: habit.schedule)
+        _hasScheduledTime = State(initialValue: habit.scheduledTime != nil)
+        _scheduledTime = State(initialValue: habit.scheduledTime ?? Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: .now) ?? .now)
+        _hourlyInterval = State(initialValue: habit.hourlyInterval)
+        _scheduleEndTime = State(initialValue: habit.scheduleEndTime ?? Calendar.current.date(bySettingHour: 22, minute: 0, second: 0, of: .now) ?? .now)
     }
 
     private var selectedColorValue: Color {
@@ -627,6 +736,26 @@ struct EditHabitSheet: View {
                     .padding(.vertical, 4)
                 }
 
+                Section("Schedule") {
+                    Picker("Repeat", selection: $selectedSchedule) {
+                        ForEach(RepeatSchedule.allCases, id: \.self) { schedule in
+                            Text(schedule.displayName).tag(schedule)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    if selectedSchedule == .hourly {
+                        Stepper("Every \(hourlyInterval)h", value: $hourlyInterval, in: 1...12)
+                        DatePicker("From", selection: $scheduledTime, displayedComponents: .hourAndMinute)
+                        DatePicker("To", selection: $scheduleEndTime, displayedComponents: .hourAndMinute)
+                    } else {
+                        Toggle("Scheduled Time", isOn: $hasScheduledTime)
+                        if hasScheduledTime {
+                            DatePicker("Time", selection: $scheduledTime, displayedComponents: .hourAndMinute)
+                        }
+                    }
+                }
+
                 Section("Preview") {
                     HStack(spacing: 12) {
                         ZStack {
@@ -651,7 +780,15 @@ struct EditHabitSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        onSave(name, selectedColor, selectedIcon)
+                        onSave(
+                            name.trimmingCharacters(in: .whitespaces),
+                            selectedColor,
+                            selectedIcon,
+                            selectedSchedule,
+                            selectedSchedule == .hourly ? scheduledTime : (hasScheduledTime ? scheduledTime : nil),
+                            selectedSchedule == .hourly ? scheduleEndTime : nil,
+                            hourlyInterval
+                        )
                         dismiss()
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -666,20 +803,43 @@ struct EditHabitSheet: View {
 struct HabitDetailSheet: View {
     let habit: Habit
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 7)
+    @State private var displayedMonth = Date.now
 
-    private var last28Days: [Date] {
-        (0..<28).map { offset in
-            Calendar.current.date(byAdding: .day, value: -offset, to: .now)!
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
+    private let dayHeaders = ["M", "T", "W", "T", "F", "S", "S"]
+
+    private var monthTitle: String {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM yyyy"
+        return f.string(from: displayedMonth)
+    }
+
+    private var monthDays: [Date?] {
+        let calendar = Calendar.current
+        guard let range = calendar.range(of: .day, in: .month, for: displayedMonth),
+              let firstDay = calendar.date(from: calendar.dateComponents([.year, .month], from: displayedMonth))
+        else { return [] }
+        let firstWeekday = calendar.component(.weekday, from: firstDay)
+        let offset = (firstWeekday - 2 + 7) % 7
+        var days: [Date?] = Array(repeating: nil, count: offset)
+        for i in range {
+            if let date = calendar.date(byAdding: .day, value: i - 1, to: firstDay) {
+                days.append(date)
+            }
         }
+        let remainder = days.count % 7
+        if remainder != 0 { days += Array(repeating: nil, count: 7 - remainder) }
+        return days
     }
 
     private var completionThisMonth: (done: Int, total: Int) {
         let calendar = Calendar.current
-        let now = Date.now
-        let daysElapsed = calendar.component(.day, from: now)
-        let year = calendar.component(.year, from: now)
-        let month = calendar.component(.month, from: now)
+        let year = calendar.component(.year, from: displayedMonth)
+        let month = calendar.component(.month, from: displayedMonth)
+        let isCurrentMonth = calendar.isDate(displayedMonth, equalTo: .now, toGranularity: .month)
+        let total = isCurrentMonth
+            ? calendar.component(.day, from: .now)
+            : (calendar.range(of: .day, in: .month, for: displayedMonth)?.count ?? 0)
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         let done = habit.completedDates.filter { ds in
@@ -687,7 +847,7 @@ struct HabitDetailSheet: View {
             return calendar.component(.year, from: date) == year &&
                    calendar.component(.month, from: date) == month
         }.count
-        return (done, daysElapsed)
+        return (done, total)
     }
 
     var body: some View {
@@ -757,39 +917,91 @@ struct HabitDetailSheet: View {
     }
 
     private var calendarSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Last 28 Days")
-                .font(.headline)
+        VStack(spacing: 12) {
+            HStack {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        displayedMonth = Calendar.current.date(byAdding: .month, value: -1, to: displayedMonth) ?? displayedMonth
+                    }
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.body.bold())
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                Spacer()
+                Text(monthTitle)
+                    .font(.headline)
+                Spacer()
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        displayedMonth = Calendar.current.date(byAdding: .month, value: 1, to: displayedMonth) ?? displayedMonth
+                    }
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.body.bold())
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
 
-            LazyVGrid(columns: columns, spacing: 6) {
-                ForEach(Array(last28Days.enumerated()), id: \.offset) { _, date in
-                    let ds = Habit.dateString(for: date)
-                    let completed = habit.completedDates.contains(ds)
-                    let isToday = ds == Habit.dateString(for: .now)
-                    Circle()
-                        .fill(completed ? AnyShapeStyle(habit.color) : AnyShapeStyle(.quaternary.opacity(0.5)))
-                        .frame(height: 36)
-                        .padding(isToday ? 2 : 0)
-                        .background {
-                            if isToday {
-                                Circle().stroke(habit.color, lineWidth: 2)
-                            }
-                        }
+            HStack(spacing: 0) {
+                ForEach(dayHeaders.indices, id: \.self) { i in
+                    Text(dayHeaders[i])
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity)
                 }
             }
 
-            HStack(spacing: 8) {
-                Circle().fill(habit.color).frame(width: 10, height: 10)
-                Text("Completed")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Circle().fill(.quaternary).frame(width: 10, height: 10)
-                Text("Missed")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            LazyVGrid(columns: columns, spacing: 4) {
+                ForEach(Array(monthDays.enumerated()), id: \.offset) { _, date in
+                    if let date {
+                        let ds = Habit.dateString(for: date)
+                        let completed = habit.completedDates.contains(ds)
+                        let isToday = ds == Habit.dateString(for: .now)
+                        HabitDayCell(
+                            date: date,
+                            completed: completed,
+                            isToday: isToday,
+                            color: habit.color
+                        )
+                    } else {
+                        Color.clear.frame(height: 44)
+                    }
+                }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - Habit Day Cell
+
+struct HabitDayCell: View {
+    let date: Date
+    let completed: Bool
+    let isToday: Bool
+    let color: Color
+
+    private var dayNumber: String {
+        String(Calendar.current.component(.day, from: date))
+    }
+
+    var body: some View {
+        Text(dayNumber)
+            .font(.caption2)
+            .fontWeight(isToday ? .bold : .regular)
+            .foregroundStyle(completed ? .white : (isToday ? color : .secondary))
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(completed ? color.opacity(0.85) : (isToday ? color.opacity(0.12) : Color.clear))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(completed && isToday ? Color.white.opacity(0.6) : Color.clear, lineWidth: 2)
+            )
     }
 }
 
@@ -798,6 +1010,7 @@ struct HabitDetailSheet: View {
 struct ArchivedHabitsView: View {
     @Environment(HabitStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedHabit: Habit? = nil
 
     var body: some View {
         NavigationStack {
@@ -806,36 +1019,43 @@ struct ArchivedHabitsView: View {
                     ContentUnavailableView(
                         "No archived habits",
                         systemImage: "archivebox",
-                        description: Text("Swipe left on a habit to archive it")
+                        description: Text("Long press a habit to archive it")
                     )
                 } else {
                     List {
                         ForEach(store.archivedHabits) { habit in
-                            HStack(spacing: 12) {
-                                Image(systemName: habit.iconName)
-                                    .foregroundStyle(habit.color)
-                                    .frame(width: 24)
-                                Text(habit.name)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                            }
-                            .padding(.vertical, 2)
-                            .swipeActions(edge: .leading) {
-                                Button {
-                                    store.unarchive(habit)
-                                } label: {
-                                    Label("Restore", systemImage: "arrow.uturn.left")
+                            Button {
+                                selectedHabit = habit
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: habit.iconName)
+                                        .foregroundStyle(habit.color)
+                                        .frame(width: 24)
+                                    Text(habit.name)
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    Button {
+                                        store.unarchive(habit)
+                                    } label: {
+                                        Image(systemName: "arrow.uturn.left")
+                                            .foregroundStyle(.green)
+                                    }
+                                    .buttonStyle(.borderless)
+                                    Button(role: .destructive) {
+                                        store.delete(habit)
+                                    } label: {
+                                        Image(systemName: "trash")
+                                            .foregroundStyle(.red)
+                                    }
+                                    .buttonStyle(.borderless)
                                 }
-                                .tint(.green)
+                                .padding(.vertical, 2)
                             }
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    store.delete(habit)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
+                            .buttonStyle(.plain)
                         }
+                    }
+                    .sheet(item: $selectedHabit) { habit in
+                        HabitDetailSheet(habit: habit)
                     }
                 }
             }

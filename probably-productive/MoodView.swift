@@ -14,8 +14,6 @@ enum CalendarTab: String, CaseIterable {
 struct MoodView: View {
     @Environment(MoodStore.self) private var store
     @Environment(HabitStore.self) private var habitStore
-    @State private var calendarTab: CalendarTab = .week
-    @State private var displayedMonth = Date.now
     @State private var searchText = ""
     @State private var showNoteField = false
     @State private var noteText = ""
@@ -34,26 +32,6 @@ struct MoodView: View {
         NavigationStack {
             List {
                 todaySection
-
-                Section("This Week") {
-                    MoodChartView(store: store)
-                }
-
-                Section {
-                    Picker("", selection: $calendarTab) {
-                        ForEach(CalendarTab.allCases, id: \.self) { tab in
-                            Text(tab.rawValue).tag(tab)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                }
-
-                if calendarTab == .week {
-                    weekSection
-                } else {
-                    monthSection
-                }
 
                 journalSection
             }
@@ -241,22 +219,6 @@ struct MoodView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(selectedMood == nil)
             }
-        }
-    }
-
-    // MARK: - Week Section
-
-    var weekSection: some View {
-        Section("This Week") {
-            MoodWeekView(store: store)
-        }
-    }
-
-    // MARK: - Month Section
-
-    var monthSection: some View {
-        Section {
-            MoodMonthView(store: store, displayedMonth: $displayedMonth)
         }
     }
 

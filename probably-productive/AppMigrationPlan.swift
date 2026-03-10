@@ -44,18 +44,68 @@ enum AppSchemaV2: VersionedSchema {
     }
 }
 
-// MARK: - Schema V3: Current (adds isArchived)
+// MARK: - Schema V3: adds isArchived
 
 enum AppSchemaV3: VersionedSchema {
     static var versionIdentifier = Schema.Version(3, 0, 0)
+    static var models: [any PersistentModel.Type] = [AppSchemaV3.Habit.self, MoodEntry.self, AppState.self]
+
+    @Model
+    final class Habit {
+        var id: UUID = UUID()
+        var name: String = ""
+        var completedDates: [String] = []
+        var colorName: String = "blue"
+        var iconName: String = "checkmark"
+        var sortOrder: Int = 0
+        var isArchived: Bool = false
+
+        init(name: String) {
+            self.id = UUID()
+            self.name = name
+            self.completedDates = []
+        }
+    }
+}
+
+// MARK: - Schema V4: Adds scheduleRaw, scheduledTime
+
+enum AppSchemaV4: VersionedSchema {
+    static var versionIdentifier = Schema.Version(4, 0, 0)
+    static var models: [any PersistentModel.Type] = [AppSchemaV4.Habit.self, MoodEntry.self, AppState.self]
+
+    @Model
+    final class Habit {
+        var id: UUID = UUID()
+        var name: String = ""
+        var completedDates: [String] = []
+        var colorName: String = "blue"
+        var iconName: String = "checkmark"
+        var sortOrder: Int = 0
+        var isArchived: Bool = false
+        var scheduleRaw: String = "daily"
+        var scheduledTime: Date? = nil
+
+        init(name: String) {
+            self.id = UUID()
+            self.name = name
+            self.completedDates = []
+        }
+    }
+}
+
+// MARK: - Schema V5: Current (adds hourlyInterval, scheduleEndTime)
+
+enum AppSchemaV5: VersionedSchema {
+    static var versionIdentifier = Schema.Version(5, 0, 0)
     static var models: [any PersistentModel.Type] = [Habit.self, MoodEntry.self, AppState.self]
 }
 
 // MARK: - Migration Plan
 
 enum AppMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] = [AppSchemaV1.self, AppSchemaV2.self, AppSchemaV3.self]
-    static var stages: [MigrationStage] = [migrateV1toV2, migrateV2toV3]
+    static var schemas: [any VersionedSchema.Type] = [AppSchemaV1.self, AppSchemaV2.self, AppSchemaV3.self, AppSchemaV4.self, AppSchemaV5.self]
+    static var stages: [MigrationStage] = [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5]
 
     static let migrateV1toV2 = MigrationStage.custom(
         fromVersion: AppSchemaV1.self,
@@ -75,5 +125,15 @@ enum AppMigrationPlan: SchemaMigrationPlan {
     static let migrateV2toV3 = MigrationStage.lightweight(
         fromVersion: AppSchemaV2.self,
         toVersion: AppSchemaV3.self
+    )
+
+    static let migrateV3toV4 = MigrationStage.lightweight(
+        fromVersion: AppSchemaV3.self,
+        toVersion: AppSchemaV4.self
+    )
+
+    static let migrateV4toV5 = MigrationStage.lightweight(
+        fromVersion: AppSchemaV4.self,
+        toVersion: AppSchemaV5.self
     )
 }
