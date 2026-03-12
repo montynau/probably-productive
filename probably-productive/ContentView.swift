@@ -212,7 +212,7 @@ struct HabitsView: View {
             .overlay(alignment: .topTrailing) {
                 HStack(spacing: 12) {
                     Button { showingReminders = true } label: {
-                        Image(systemName: "bell")
+                        Image(systemName: "gearshape")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(.primary)
                             .frame(width: 36, height: 36)
@@ -1165,6 +1165,7 @@ struct RemindersSheet: View {
     @AppStorage("habitsReminderSeconds") private var habitsSeconds: Double = 9 * 3600
     @AppStorage("moodReminderEnabled") private var moodEnabled = false
     @AppStorage("moodReminderSeconds") private var moodSeconds: Double = 21 * 3600
+    @AppStorage("colorSchemeRaw") private var colorSchemeRaw: String = "system"
 
     private var habitsTime: Binding<Date> { timeBinding($habitsSeconds) }
     private var moodTime: Binding<Date> { timeBinding($moodSeconds) }
@@ -1179,6 +1180,17 @@ struct RemindersSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Picker("Appearance", selection: $colorSchemeRaw) {
+                        Label("System", systemImage: "circle.lefthalf.filled").tag("system")
+                        Label("Light", systemImage: "sun.max.fill").tag("light")
+                        Label("Dark", systemImage: "moon.fill").tag("dark")
+                    }
+                    .pickerStyle(.menu)
+                } header: {
+                    Text("Appearance")
+                }
+
                 Section {
                     Toggle("Habits reminder", isOn: $habitsEnabled)
                     if habitsEnabled {
@@ -1201,7 +1213,7 @@ struct RemindersSheet: View {
                     Text("Because you'll forget otherwise. We believe in you.")
                 }
             }
-            .navigationTitle("Reminders")
+            .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

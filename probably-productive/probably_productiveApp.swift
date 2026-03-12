@@ -34,6 +34,15 @@ struct probably_productiveApp: App {
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @AppStorage("colorSchemeRaw") private var colorSchemeRaw: String = "system"
+
+    private var preferredColorScheme: ColorScheme? {
+        switch colorSchemeRaw {
+        case "light": return .light
+        case "dark": return .dark
+        default: return nil
+        }
+    }
 
     var body: some View {
         let appState = fetchOrCreateAppState()
@@ -41,6 +50,7 @@ struct RootView: View {
             habitStore: HabitStore(modelContext: modelContext, appState: appState),
             moodStore: MoodStore(modelContext: modelContext, appState: appState)
         )
+        .preferredColorScheme(preferredColorScheme)
         .fullScreenCover(isPresented: .constant(!hasSeenOnboarding)) {
             OnboardingView()
         }
