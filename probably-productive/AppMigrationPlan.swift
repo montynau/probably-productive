@@ -94,11 +94,32 @@ enum AppSchemaV4: VersionedSchema {
     }
 }
 
-// MARK: - Schema V5: Adds hourlyInterval, scheduleEndTime
+// MARK: - Schema V5: Adds hourlyInterval, scheduleEndTime (snapshot)
 
 enum AppSchemaV5: VersionedSchema {
     static var versionIdentifier = Schema.Version(5, 0, 0)
-    static var models: [any PersistentModel.Type] = [Habit.self, MoodEntry.self, AppState.self]
+    static var models: [any PersistentModel.Type] = [AppSchemaV5.Habit.self, MoodEntry.self, AppState.self]
+
+    @Model
+    final class Habit {
+        var id: UUID = UUID()
+        var name: String = ""
+        var completedDates: [String] = []
+        var colorName: String = "blue"
+        var iconName: String = "checkmark"
+        var sortOrder: Int = 0
+        var isArchived: Bool = false
+        var scheduleRaw: String = "daily"
+        var scheduledTime: Date? = nil
+        var hourlyInterval: Int = 2
+        var scheduleEndTime: Date? = nil
+
+        init(name: String) {
+            self.id = UUID()
+            self.name = name
+            self.completedDates = []
+        }
+    }
 }
 
 // MARK: - Schema V6: Current (adds categoryRaw)
