@@ -34,6 +34,41 @@ struct HabitsView: View {
     @State private var showingReminders = false
     @State private var burstAmount: Int? = nil
     @State private var burstID = UUID()
+    @State private var selectedCategory: HabitCategory? = nil
+
+    private var categoriesInUse: [HabitCategory] {
+        let all = store.habits + store.notDueHabits
+        let used = Set(all.map { $0.category })
+        return HabitCategory.allCases.filter { used.contains($0) }
+    }
+
+    private var filteredHabits: [Habit] {
+        guard let cat = selectedCategory else { return store.habits }
+        return store.habits.filter { $0.category == cat }
+    }
+
+    private func moveHabits(from source: IndexSet, to destination: Int) {
+        guard selectedCategory == nil else { return }
+        store.move(from: source, to: destination)
+    }
+
+    private var categoryFilterBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                CategoryFilterChip(title: "All", icon: "square.grid.2x2", color: .primary, isSelected: selectedCategory == nil) {
+                    selectedCategory = nil
+                }
+                ForEach(categoriesInUse, id: \.self) { cat in
+                    CategoryFilterChip(title: cat.displayName, icon: cat.icon, color: cat.color, isSelected: selectedCategory == cat) {
+                        selectedCategory = selectedCategory == cat ? nil : cat
+                    }
+                }
+            }
+            .padding(.vertical, 2)
+        }
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+    }
 
     var body: some View {
         NavigationStack {
@@ -56,7 +91,14 @@ struct HabitsView: View {
                         .listRowBackground(Color.clear)
                 }
 
-                ForEach(store.habits) { habit in
+                if categoriesInUse.count > 1 {
+                    Section {
+                        categoryFilterBar
+                    }
+                    .listSectionSpacing(4)
+                }
+
+                ForEach(filteredHabits) { habit in
                     Button {
                         selectedHabit = habit
                     } label: {
@@ -80,7 +122,7 @@ struct HabitsView: View {
                         }
                     }
                 }
-                .onMove(perform: store.move)
+                .onMove(perform: moveHabits)
 
                 if !store.notDueHabits.isEmpty {
                     Section("Later") {
@@ -136,7 +178,7 @@ struct HabitsView: View {
                     }
                 }
             }
-            .environment(\.editMode, .constant(.active))
+            .environment(\.editMode, Binding.constant(EditMode.active))
             .toolbar(.hidden, for: .navigationBar)
             .overlay(alignment: .topTrailing) {
                 HStack(spacing: 12) {
@@ -168,13 +210,13 @@ struct HabitsView: View {
                 .padding(.trailing, 16)
             }
             .sheet(isPresented: $showingAddHabit) {
-                AddHabitSheet { name, colorName, iconName, schedule, scheduledTime, endTime, interval in
-                    store.add(name: name, colorName: colorName, iconName: iconName, schedule: schedule, scheduledTime: scheduledTime, scheduleEndTime: endTime, hourlyInterval: interval)
+                AddHabitSheet { name, colorName, iconName, schedule, scheduledTime, endTime, interval, category in
+                    store.add(name: name, colorName: colorName, iconName: iconName, schedule: schedule, scheduledTime: scheduledTime, scheduleEndTime: endTime, hourlyInterval: interval, category: category)
                 }
             }
             .sheet(item: $editingHabit) { habit in
-                EditHabitSheet(habit: habit) { name, colorName, iconName, schedule, scheduledTime, endTime, interval in
-                    store.update(habit, name: name, colorName: colorName, iconName: iconName, schedule: schedule, scheduledTime: scheduledTime, scheduleEndTime: endTime, hourlyInterval: interval)
+                EditHabitSheet(habit: habit) { name, colorName, iconName, schedule, scheduledTime, endTime, interval, category in
+                    store.update(habit, name: name, colorName: colorName, iconName: iconName, schedule: schedule, scheduledTime: scheduledTime, scheduleEndTime: endTime, hourlyInterval: interval, category: category)
                 }
             }
             .sheet(item: $selectedHabit) { habit in
@@ -528,7 +570,7 @@ struct StreakDotsView: View {
 // MARK: - Add Habit Sheet
 
 struct AddHabitSheet: View {
-    let onAdd: (String, String, String, RepeatSchedule, Date?, Date?, Int) -> Void
+    let onAdd: (String, String, String, RepeatSchedule, Date?, Date?, Int, HabitCategory) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
@@ -539,6 +581,7 @@ struct AddHabitSheet: View {
     @State private var scheduledTime: Date = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: .now) ?? .now
     @State private var hourlyInterval: Int = 2
     @State private var scheduleEndTime: Date = Calendar.current.date(bySettingHour: 22, minute: 0, second: 0, of: .now) ?? .now
+    @State private var selectedCategory: HabitCategory = .other
     @FocusState private var focused: Bool
 
     static let colorOptions: [(String, Color)] = [
@@ -608,6 +651,15 @@ struct AddHabitSheet: View {
                     .padding(.vertical, 4)
                 }
 
+                Section("Category") {
+                    Picker("Category", selection: $selectedCategory) {
+                        ForEach(HabitCategory.allCases, id: \.self) { cat in
+                            Label(cat.displayName, systemImage: cat.icon).tag(cat)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+
                 Section("Schedule") {
                     Picker("Repeat", selection: $selectedSchedule) {
                         ForEach(RepeatSchedule.allCases, id: \.self) { schedule in
@@ -661,7 +713,8 @@ struct AddHabitSheet: View {
                             selectedSchedule,
                             selectedSchedule == .hourly ? scheduledTime : (hasScheduledTime ? scheduledTime : nil),
                             selectedSchedule == .hourly ? scheduleEndTime : nil,
-                            hourlyInterval
+                            hourlyInterval,
+                            selectedCategory
                         )
                         dismiss()
                     }
@@ -677,7 +730,7 @@ struct AddHabitSheet: View {
 
 struct EditHabitSheet: View {
     let habit: Habit
-    let onSave: (String, String, String, RepeatSchedule, Date?, Date?, Int) -> Void
+    let onSave: (String, String, String, RepeatSchedule, Date?, Date?, Int, HabitCategory) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name: String
@@ -688,8 +741,9 @@ struct EditHabitSheet: View {
     @State private var scheduledTime: Date
     @State private var hourlyInterval: Int
     @State private var scheduleEndTime: Date
+    @State private var selectedCategory: HabitCategory
 
-    init(habit: Habit, onSave: @escaping (String, String, String, RepeatSchedule, Date?, Date?, Int) -> Void) {
+    init(habit: Habit, onSave: @escaping (String, String, String, RepeatSchedule, Date?, Date?, Int, HabitCategory) -> Void) {
         self.habit = habit
         self.onSave = onSave
         _name = State(initialValue: habit.name)
@@ -700,6 +754,7 @@ struct EditHabitSheet: View {
         _scheduledTime = State(initialValue: habit.scheduledTime ?? Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: .now) ?? .now)
         _hourlyInterval = State(initialValue: habit.hourlyInterval)
         _scheduleEndTime = State(initialValue: habit.scheduleEndTime ?? Calendar.current.date(bySettingHour: 22, minute: 0, second: 0, of: .now) ?? .now)
+        _selectedCategory = State(initialValue: habit.category)
     }
 
     private var selectedColorValue: Color {
@@ -756,6 +811,15 @@ struct EditHabitSheet: View {
                     .padding(.vertical, 4)
                 }
 
+                Section("Category") {
+                    Picker("Category", selection: $selectedCategory) {
+                        ForEach(HabitCategory.allCases, id: \.self) { cat in
+                            Label(cat.displayName, systemImage: cat.icon).tag(cat)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+
                 Section("Schedule") {
                     Picker("Repeat", selection: $selectedSchedule) {
                         ForEach(RepeatSchedule.allCases, id: \.self) { schedule in
@@ -807,7 +871,8 @@ struct EditHabitSheet: View {
                             selectedSchedule,
                             selectedSchedule == .hourly ? scheduledTime : (hasScheduledTime ? scheduledTime : nil),
                             selectedSchedule == .hourly ? scheduleEndTime : nil,
-                            hourlyInterval
+                            hourlyInterval,
+                            selectedCategory
                         )
                         dismiss()
                     }
@@ -1167,6 +1232,35 @@ struct RemindersSheet: View {
         } else {
             nm.cancelMoodReminder()
         }
+    }
+}
+
+// MARK: - Category Filter Chip
+
+struct CategoryFilterChip: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.caption2)
+                Text(title)
+                    .font(.caption.weight(.medium))
+            }
+            .foregroundStyle(isSelected ? .white : color)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(isSelected ? color : color.opacity(0.12))
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 

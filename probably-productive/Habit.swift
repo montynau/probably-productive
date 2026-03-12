@@ -2,6 +2,54 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+// MARK: - Habit Category
+
+enum HabitCategory: String, Codable, CaseIterable {
+    case health = "health"
+    case work = "work"
+    case learning = "learning"
+    case personal = "personal"
+    case finance = "finance"
+    case social = "social"
+    case other = "other"
+
+    var displayName: String {
+        switch self {
+        case .health: "Health"
+        case .work: "Work"
+        case .learning: "Learning"
+        case .personal: "Personal"
+        case .finance: "Finance"
+        case .social: "Social"
+        case .other: "Other"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .health: "heart.fill"
+        case .work: "briefcase.fill"
+        case .learning: "book.fill"
+        case .personal: "person.fill"
+        case .finance: "dollarsign.circle.fill"
+        case .social: "person.2.fill"
+        case .other: "square.grid.2x2.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .health: .red
+        case .work: .blue
+        case .learning: .purple
+        case .personal: .green
+        case .finance: .yellow
+        case .social: .orange
+        case .other: .gray
+        }
+    }
+}
+
 // MARK: - Repeat Schedule
 
 enum RepeatSchedule: String, Codable, CaseIterable {
@@ -49,6 +97,7 @@ class Habit {
     var scheduledTime: Date? = nil
     var hourlyInterval: Int = 2
     var scheduleEndTime: Date? = nil
+    var categoryRaw: String = "other"
 
     init(name: String, colorName: String = "blue", iconName: String = "checkmark", sortOrder: Int = 0) {
         self.id = UUID()
@@ -62,11 +111,17 @@ class Habit {
         self.scheduledTime = nil
         self.hourlyInterval = 2
         self.scheduleEndTime = nil
+        self.categoryRaw = "other"
     }
 
     var schedule: RepeatSchedule {
         get { RepeatSchedule(rawValue: scheduleRaw) ?? .daily }
         set { scheduleRaw = newValue.rawValue }
+    }
+
+    var category: HabitCategory {
+        get { HabitCategory(rawValue: categoryRaw) ?? .other }
+        set { categoryRaw = newValue.rawValue }
     }
 
     var color: Color {

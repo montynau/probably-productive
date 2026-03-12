@@ -46,7 +46,7 @@ class HabitStore {
         archivedHabits = (try? modelContext.fetch(descriptor)) ?? []
     }
 
-    func add(name: String, colorName: String = "blue", iconName: String = "checkmark", schedule: RepeatSchedule = .daily, scheduledTime: Date? = nil, scheduleEndTime: Date? = nil, hourlyInterval: Int = 2) {
+    func add(name: String, colorName: String = "blue", iconName: String = "checkmark", schedule: RepeatSchedule = .daily, scheduledTime: Date? = nil, scheduleEndTime: Date? = nil, hourlyInterval: Int = 2, category: HabitCategory = .other) {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         let habit = Habit(name: trimmed, colorName: colorName, iconName: iconName, sortOrder: habits.count + notDueHabits.count)
@@ -54,11 +54,12 @@ class HabitStore {
         habit.scheduledTime = scheduledTime
         habit.scheduleEndTime = scheduleEndTime
         habit.hourlyInterval = hourlyInterval
+        habit.category = category
         modelContext.insert(habit)
         save()
     }
 
-    func update(_ habit: Habit, name: String, colorName: String, iconName: String, schedule: RepeatSchedule, scheduledTime: Date?, scheduleEndTime: Date?, hourlyInterval: Int) {
+    func update(_ habit: Habit, name: String, colorName: String, iconName: String, schedule: RepeatSchedule, scheduledTime: Date?, scheduleEndTime: Date?, hourlyInterval: Int, category: HabitCategory) {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         habit.name = trimmed
@@ -68,6 +69,7 @@ class HabitStore {
         habit.scheduledTime = scheduledTime
         habit.scheduleEndTime = scheduleEndTime
         habit.hourlyInterval = hourlyInterval
+        habit.category = category
         save()
     }
 
