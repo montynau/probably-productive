@@ -143,8 +143,10 @@ struct CalendarView: View {
             VStack(alignment: .leading, spacing: 12) {
                 if let entry = moodStore.entry(for: ds) {
                     HStack(spacing: 10) {
-                        Text(entry.mood.emoji)
-                            .font(.title2)
+                        Image(entry.mood.imageName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 48)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(entry.mood.label)
                                 .font(.subheadline.bold())
@@ -213,10 +215,12 @@ struct UnifiedDayCell: View {
                 .foregroundStyle(isToday ? .primary : .secondary)
 
             if let entry = moodEntry {
-                Text(entry.mood.emoji)
-                    .font(.caption)
+                Image(entry.mood.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 20)
             } else {
-                Color.clear.frame(height: 16)
+                Color.clear.frame(height: 20)
             }
 
             if habitsTotal > 0 {

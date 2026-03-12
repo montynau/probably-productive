@@ -17,6 +17,16 @@ enum MoodLevel: Int, Codable, CaseIterable, Identifiable {
         }
     }
 
+    var imageName: String {
+        switch self {
+        case .veryBad: "mood_very_bad"
+        case .bad: "mood_bad"
+        case .neutral: "mood_neutral"
+        case .good: "mood_good"
+        case .great: "mood_great"
+        }
+    }
+
     var label: String {
         switch self {
         case .veryBad: "Very Bad"

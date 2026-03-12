@@ -101,8 +101,10 @@ struct MoodView: View {
 
     private func todayEntryRow(entry: MoodEntry) -> some View {
         HStack(spacing: 14) {
-            Text(entry.mood.emoji)
-                .font(.largeTitle)
+            Image(entry.mood.imageName)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 56)
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.mood.label)
                     .font(.headline)
@@ -171,21 +173,15 @@ struct MoodView: View {
                         logMood(mood)
                     }
                 } label: {
-                    VStack(spacing: 4) {
-                        Text(mood.emoji)
-                            .font(.system(size: 38))
-                            .scaleEffect(selectedMood == mood ? 1.2 : 1.0)
-                            .animation(.spring(duration: 0.2), value: selectedMood)
-                        Text(mood.label)
-                            .font(.system(size: 9))
-                            .foregroundStyle(selectedMood == mood ? mood.color : Color.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .fontWeight(selectedMood == mood ? .semibold : .regular)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .opacity(selectedMood == nil || selectedMood == mood ? 1.0 : 0.3)
-                    .animation(.spring(duration: 0.2), value: selectedMood)
+                    Image(mood.imageName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 72)
+                        .scaleEffect(selectedMood == mood ? 1.15 : 1.0)
+                        .animation(.spring(duration: 0.2), value: selectedMood)
+                        .frame(maxWidth: .infinity)
+                        .opacity(selectedMood == nil || selectedMood == mood ? 1.0 : 0.3)
+                        .animation(.spring(duration: 0.2), value: selectedMood)
                 }
                 .buttonStyle(.plain)
             }
@@ -246,8 +242,10 @@ struct MoodView: View {
             Section(header: historyHeader) {
                 ForEach(filteredEntries) { entry in
                     HStack(alignment: .top, spacing: 12) {
-                        Text(entry.mood.emoji)
-                            .font(.title2)
+                        Image(entry.mood.imageName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 40)
                         VStack(alignment: .leading, spacing: 2) {
                             HStack {
                                 Text(entry.mood.label)
@@ -323,8 +321,10 @@ struct MoodWeekView: View {
                             .frame(width: 40, height: 40)
 
                         if let entry {
-                            Text(entry.mood.emoji)
-                                .font(.title3)
+                            Image(entry.mood.imageName)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 30)
                         } else {
                             Circle()
                                 .fill(.quaternary)
@@ -457,8 +457,10 @@ struct MoodMonthView: View {
                 Divider()
                 if let entry = store.entry(for: ds) {
                     HStack(spacing: 12) {
-                        Text(entry.mood.emoji)
-                            .font(.title)
+                        Image(entry.mood.imageName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 52)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(entry.mood.label)
                                 .font(.headline)
@@ -514,10 +516,12 @@ struct MoodDayCell: View {
                 .fontWeight(isToday ? .bold : .regular)
 
             if let entry {
-                Text(entry.mood.emoji)
-                    .font(.body)
+                Image(entry.mood.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 24)
             } else {
-                Color.clear.frame(height: 20)
+                Color.clear.frame(height: 24)
             }
         }
         .frame(maxWidth: .infinity)
