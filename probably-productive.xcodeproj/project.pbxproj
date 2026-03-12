@@ -6,14 +6,66 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F14F7E582F6298F8005A07FA /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F14F7E572F6298F8005A07FA /* WidgetKit.framework */; };
+		F14F7E5A2F6298F8005A07FA /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F14F7E592F6298F8005A07FA /* SwiftUI.framework */; };
+		F14F7E652F6298FA005A07FA /* ProbablyProductiveWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F14F7E552F6298F7005A07FA /* ProbablyProductiveWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F14F7E632F6298FA005A07FA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F118518F2F5B3FF800F8D263 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F14F7E542F6298F7005A07FA;
+			remoteInfo = ProbablyProductiveWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F14F7E6A2F6298FA005A07FA /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F14F7E652F6298FA005A07FA /* ProbablyProductiveWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		F11851972F5B3FF800F8D263 /* probably-productive.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "probably-productive.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		F14F7E552F6298F7005A07FA /* ProbablyProductiveWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ProbablyProductiveWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F14F7E572F6298F8005A07FA /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		F14F7E592F6298F8005A07FA /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		F14F7E6C2F629A28005A07FA /* ProbablyProductiveWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ProbablyProductiveWidgetExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F14F7E662F6298FA005A07FA /* Exceptions for "ProbablyProductiveWidget" folder in "ProbablyProductiveWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F14F7E542F6298F7005A07FA /* ProbablyProductiveWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F11851992F5B3FF800F8D263 /* probably-productive */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "probably-productive";
+			sourceTree = "<group>";
+		};
+		F14F7E5B2F6298F8005A07FA /* ProbablyProductiveWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F14F7E662F6298FA005A07FA /* Exceptions for "ProbablyProductiveWidget" folder in "ProbablyProductiveWidgetExtension" target */,
+			);
+			path = ProbablyProductiveWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -26,13 +78,25 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F14F7E522F6298F7005A07FA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F14F7E5A2F6298F8005A07FA /* SwiftUI.framework in Frameworks */,
+				F14F7E582F6298F8005A07FA /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		F118518E2F5B3FF800F8D263 = {
 			isa = PBXGroup;
 			children = (
+				F14F7E6C2F629A28005A07FA /* ProbablyProductiveWidgetExtension.entitlements */,
 				F11851992F5B3FF800F8D263 /* probably-productive */,
+				F14F7E5B2F6298F8005A07FA /* ProbablyProductiveWidget */,
+				F14F7E562F6298F8005A07FA /* Frameworks */,
 				F11851982F5B3FF800F8D263 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,8 +105,18 @@
 			isa = PBXGroup;
 			children = (
 				F11851972F5B3FF800F8D263 /* probably-productive.app */,
+				F14F7E552F6298F7005A07FA /* ProbablyProductiveWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F14F7E562F6298F8005A07FA /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F14F7E572F6298F8005A07FA /* WidgetKit.framework */,
+				F14F7E592F6298F8005A07FA /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -55,10 +129,12 @@
 				F11851932F5B3FF800F8D263 /* Sources */,
 				F11851942F5B3FF800F8D263 /* Frameworks */,
 				F11851952F5B3FF800F8D263 /* Resources */,
+				F14F7E6A2F6298FA005A07FA /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F14F7E642F6298FA005A07FA /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F11851992F5B3FF800F8D263 /* probably-productive */,
@@ -69,6 +145,28 @@
 			productName = "probably-productive";
 			productReference = F11851972F5B3FF800F8D263 /* probably-productive.app */;
 			productType = "com.apple.product-type.application";
+		};
+		F14F7E542F6298F7005A07FA /* ProbablyProductiveWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F14F7E672F6298FA005A07FA /* Build configuration list for PBXNativeTarget "ProbablyProductiveWidgetExtension" */;
+			buildPhases = (
+				F14F7E512F6298F7005A07FA /* Sources */,
+				F14F7E522F6298F7005A07FA /* Frameworks */,
+				F14F7E532F6298F7005A07FA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F14F7E5B2F6298F8005A07FA /* ProbablyProductiveWidget */,
+			);
+			name = ProbablyProductiveWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = ProbablyProductiveWidgetExtension;
+			productReference = F14F7E552F6298F7005A07FA /* ProbablyProductiveWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -81,6 +179,9 @@
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					F11851962F5B3FF800F8D263 = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					F14F7E542F6298F7005A07FA = {
 						CreatedOnToolsVersion = 26.3;
 					};
 				};
@@ -100,12 +201,20 @@
 			projectRoot = "";
 			targets = (
 				F11851962F5B3FF800F8D263 /* probably-productive */,
+				F14F7E542F6298F7005A07FA /* ProbablyProductiveWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		F11851952F5B3FF800F8D263 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F14F7E532F6298F7005A07FA /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +231,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F14F7E512F6298F7005A07FA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F14F7E642F6298FA005A07FA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F14F7E542F6298F7005A07FA /* ProbablyProductiveWidgetExtension */;
+			targetProxy = F14F7E632F6298FA005A07FA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		F11851A02F5B3FFA00F8D263 /* Debug */ = {
@@ -246,6 +370,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "probably-productive/probably-productive.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = ZZNZA3FQ74;
@@ -290,6 +415,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "probably-productive/probably-productive.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = ZZNZA3FQ74;
@@ -329,6 +455,75 @@
 			};
 			name = Release;
 		};
+		F14F7E682F6298FA005A07FA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = ProbablyProductiveWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZZNZA3FQ74;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ProbablyProductiveWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ProbablyProductiveWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "montynauorg.probably-productive.ProbablyProductiveWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		F14F7E692F6298FA005A07FA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = ProbablyProductiveWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZZNZA3FQ74;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ProbablyProductiveWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ProbablyProductiveWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "montynauorg.probably-productive.ProbablyProductiveWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -346,6 +541,15 @@
 			buildConfigurations = (
 				F11851A32F5B3FFA00F8D263 /* Debug */,
 				F11851A42F5B3FFA00F8D263 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F14F7E672F6298FA005A07FA /* Build configuration list for PBXNativeTarget "ProbablyProductiveWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F14F7E682F6298FA005A07FA /* Debug */,
+				F14F7E692F6298FA005A07FA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

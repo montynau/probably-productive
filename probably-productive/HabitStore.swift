@@ -130,5 +130,6 @@ class HabitStore {
         fetch()
         fetchArchived()
         NotificationManager.shared.rescheduleHabitNotifications(allHabits: habits + notDueHabits + archivedHabits)
+        WidgetDataProvider.write(from: self)
     }
 }
