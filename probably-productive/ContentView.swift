@@ -180,35 +180,6 @@ struct HabitsView: View {
             }
             .environment(\.editMode, Binding.constant(EditMode.active))
             .toolbar(.hidden, for: .navigationBar)
-            .overlay(alignment: .topTrailing) {
-                HStack(spacing: 12) {
-                    Button { showingReminders = true } label: {
-                        Image(systemName: "bell")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .frame(width: 36, height: 36)
-                            .background(.regularMaterial, in: Circle())
-                    }
-                    if !store.archivedHabits.isEmpty {
-                        Button { showingArchived = true } label: {
-                            Image(systemName: "archivebox")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(.primary)
-                                .frame(width: 36, height: 36)
-                                .background(.regularMaterial, in: Circle())
-                        }
-                    }
-                    Button { showingAddHabit = true } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
-                            .background(.green, in: Circle())
-                    }
-                }
-                .padding(.top, 8)
-                .padding(.trailing, 16)
-            }
             .sheet(isPresented: $showingAddHabit) {
                 AddHabitSheet { name, colorName, iconName, schedule, scheduledTime, endTime, interval, category in
                     store.add(name: name, colorName: colorName, iconName: iconName, schedule: schedule, scheduledTime: scheduledTime, scheduleEndTime: endTime, hourlyInterval: interval, category: category)
@@ -237,6 +208,35 @@ struct HabitsView: View {
                     )
                     .background(.background)
                 }
+            }
+            .overlay(alignment: .topTrailing) {
+                HStack(spacing: 12) {
+                    Button { showingReminders = true } label: {
+                        Image(systemName: "bell")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 36, height: 36)
+                            .background(.regularMaterial, in: Circle())
+                    }
+                    if !store.archivedHabits.isEmpty {
+                        Button { showingArchived = true } label: {
+                            Image(systemName: "archivebox")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.primary)
+                                .frame(width: 36, height: 36)
+                                .background(.regularMaterial, in: Circle())
+                        }
+                    }
+                    Button { showingAddHabit = true } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .background(.green, in: Circle())
+                    }
+                }
+                .padding(.top, 8)
+                .padding(.trailing, 16)
             }
         }
         .overlay {
