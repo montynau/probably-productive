@@ -25,6 +25,7 @@ class HabitStore {
         self.appState = appState
         fetch()
         fetchArchived()
+        WidgetDataProvider.write(from: self)
     }
 
     func fetch() {
