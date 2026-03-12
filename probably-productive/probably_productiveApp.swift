@@ -33,6 +33,7 @@ struct probably_productiveApp: App {
 // so it can fetch/create AppState and pass stores into the app environment.
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
     var body: some View {
         let appState = fetchOrCreateAppState()
@@ -40,6 +41,9 @@ struct RootView: View {
             habitStore: HabitStore(modelContext: modelContext, appState: appState),
             moodStore: MoodStore(modelContext: modelContext, appState: appState)
         )
+        .fullScreenCover(isPresented: .constant(!hasSeenOnboarding)) {
+            OnboardingView()
+        }
     }
 
     private func fetchOrCreateAppState() -> AppState {
