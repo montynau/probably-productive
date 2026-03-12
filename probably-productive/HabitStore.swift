@@ -129,5 +129,6 @@ class HabitStore {
         try? modelContext.save()
         fetch()
         fetchArchived()
+        NotificationManager.shared.rescheduleHabitNotifications(allHabits: habits + notDueHabits + archivedHabits)
     }
 }

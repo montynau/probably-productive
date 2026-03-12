@@ -29,6 +29,7 @@ struct HabitsView: View {
     @State private var editingHabit: Habit? = nil
     @State private var selectedHabit: Habit? = nil
     @State private var showingArchived = false
+    @State private var showingReminders = false
     @State private var burstAmount: Int? = nil
     @State private var burstID = UUID()
 
@@ -137,6 +138,13 @@ struct HabitsView: View {
             .toolbar(.hidden, for: .navigationBar)
             .overlay(alignment: .topTrailing) {
                 HStack(spacing: 12) {
+                    Button { showingReminders = true } label: {
+                        Image(systemName: "bell")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 36, height: 36)
+                            .background(.regularMaterial, in: Circle())
+                    }
                     if !store.archivedHabits.isEmpty {
                         Button { showingArchived = true } label: {
                             Image(systemName: "archivebox")
@@ -172,6 +180,9 @@ struct HabitsView: View {
             }
             .sheet(isPresented: $showingArchived) {
                 ArchivedHabitsView()
+            }
+            .sheet(isPresented: $showingReminders) {
+                RemindersSheet()
             }
             .overlay {
                 if store.habits.isEmpty && store.notDueHabits.isEmpty {
@@ -442,12 +453,19 @@ struct HabitRow: View {
     let habit: Habit
     let onToggle: () -> Void
 
+    @State private var bounceID = 0
+
     var body: some View {
         HStack(spacing: 12) {
-            Button(action: onToggle) {
+            Button {
+                let wasCompleted = habit.isCompletedToday()
+                onToggle()
+                if !wasCompleted { bounceID += 1 }
+            } label: {
                 Image(systemName: habit.isCompletedToday() ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
                     .foregroundStyle(habit.isCompletedToday() ? habit.color : Color.secondary)
+                    .symbolEffect(.bounce, value: bounceID)
                     .animation(.spring(duration: 0.2), value: habit.isCompletedToday())
                     .padding(.vertical, 10)
                     .padding(.trailing, 4)
@@ -1066,6 +1084,86 @@ struct ArchivedHabitsView: View {
                     Button("Done") { dismiss() }
                 }
             }
+        }
+    }
+}
+
+// MARK: - Reminders Sheet
+
+struct RemindersSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(HabitStore.self) private var habitStore
+
+    @AppStorage("habitsReminderEnabled") private var habitsEnabled = false
+    @AppStorage("habitsReminderSeconds") private var habitsSeconds: Double = 9 * 3600
+    @AppStorage("moodReminderEnabled") private var moodEnabled = false
+    @AppStorage("moodReminderSeconds") private var moodSeconds: Double = 21 * 3600
+
+    private var habitsTime: Binding<Date> { timeBinding($habitsSeconds) }
+    private var moodTime: Binding<Date> { timeBinding($moodSeconds) }
+
+    private func timeBinding(_ seconds: Binding<Double>) -> Binding<Date> {
+        Binding(
+            get: { Calendar.current.startOfDay(for: .now).addingTimeInterval(seconds.wrappedValue) },
+            set: { seconds.wrappedValue = $0.timeIntervalSince(Calendar.current.startOfDay(for: $0)) }
+        )
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Toggle("Habits reminder", isOn: $habitsEnabled)
+                    if habitsEnabled {
+                        DatePicker("Time", selection: habitsTime, displayedComponents: .hourAndMinute)
+                    }
+                } header: {
+                    Text("Habits")
+                } footer: {
+                    Text("A gentle nudge to check off your habits. Very gentle.")
+                }
+
+                Section {
+                    Toggle("Mood reminder", isOn: $moodEnabled)
+                    if moodEnabled {
+                        DatePicker("Time", selection: moodTime, displayedComponents: .hourAndMinute)
+                    }
+                } header: {
+                    Text("Mood")
+                } footer: {
+                    Text("Because you'll forget otherwise. We believe in you.")
+                }
+            }
+            .navigationTitle("Reminders")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .onChange(of: habitsEnabled) { _, new in
+            if new { NotificationManager.shared.requestPermission() }
+            rescheduleAll()
+        }
+        .onChange(of: habitsSeconds) { _, _ in rescheduleAll() }
+        .onChange(of: moodEnabled) { _, new in
+            if new { NotificationManager.shared.requestPermission() }
+            rescheduleAll()
+        }
+        .onChange(of: moodSeconds) { _, _ in rescheduleAll() }
+    }
+
+    private func rescheduleAll() {
+        let nm = NotificationManager.shared
+        let allHabits = habitStore.habits + habitStore.notDueHabits + habitStore.archivedHabits
+        nm.rescheduleHabitNotifications(allHabits: allHabits)
+
+        if moodEnabled {
+            let c = Calendar.current.dateComponents([.hour, .minute], from: moodTime.wrappedValue)
+            nm.scheduleMoodReminder(hour: c.hour ?? 21, minute: c.minute ?? 0)
+        } else {
+            nm.cancelMoodReminder()
         }
     }
 }
