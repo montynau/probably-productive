@@ -104,7 +104,7 @@ struct MoodView: View {
             Image(entry.mood.imageName)
                 .resizable()
                 .scaledToFit()
-                .frame(height: 56)
+                .frame(height: 110)
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.mood.label)
                     .font(.headline)
@@ -176,7 +176,7 @@ struct MoodView: View {
                     Image(mood.imageName)
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 72)
+                        .frame(height: 120)
                         .scaleEffect(selectedMood == mood ? 1.15 : 1.0)
                         .animation(.spring(duration: 0.2), value: selectedMood)
                         .frame(maxWidth: .infinity)
@@ -245,7 +245,7 @@ struct MoodView: View {
                         Image(entry.mood.imageName)
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 40)
+                            .frame(height: 80)
                         VStack(alignment: .leading, spacing: 2) {
                             HStack {
                                 Text(entry.mood.label)
