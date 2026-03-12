@@ -15,6 +15,8 @@ struct ContentView: View {
                 .tabItem { Label("Mood", systemImage: "face.smiling") }
             CalendarView()
                 .tabItem { Label("Calendar", systemImage: "calendar") }
+            StatsView()
+                .tabItem { Label("Stats", systemImage: "chart.bar.fill") }
         }
         .environment(habitStore)
         .environment(moodStore)
