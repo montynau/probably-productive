@@ -195,6 +195,7 @@ struct StatsView: View {
 
                         Image(level.imageName)
                             .resizable()
+                            .renderingMode(.original)
                             .scaledToFit()
                             .frame(height: 32)
                     }
