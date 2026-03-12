@@ -237,7 +237,7 @@ class Habit {
     func isCompletedToday() -> Bool {
         switch schedule {
         case .hourly:
-            return completedDates.contains(Self.hourSlotKey(for: .now, interval: hourlyInterval))
+            return completedSlotsToday >= todaySlotCount
         case .daily, .weekdays, .weekends, .never:
             return completedDates.contains(Self.dateString(for: .now))
         case .weekly:
