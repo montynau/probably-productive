@@ -123,6 +123,18 @@ class HabitStore {
         save()
     }
 
+    func saveNote(_ note: String, for habit: Habit, dateKey: String) {
+        let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        var notes = habit.notes
+        if trimmed.isEmpty {
+            notes.removeValue(forKey: dateKey)
+        } else {
+            notes[dateKey] = trimmed
+        }
+        habit.notes = notes
+        save()
+    }
+
     func addXP(_ amount: Int) {
         totalXP += amount
         save()

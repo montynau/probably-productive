@@ -98,6 +98,7 @@ class Habit {
     var hourlyInterval: Int = 2
     var scheduleEndTime: Date? = nil
     var categoryRaw: String = "other"
+    var notesData: Data = Data()
 
     init(name: String, colorName: String = "blue", iconName: String = "checkmark", sortOrder: Int = 0) {
         self.id = UUID()
@@ -112,6 +113,13 @@ class Habit {
         self.hourlyInterval = 2
         self.scheduleEndTime = nil
         self.categoryRaw = "other"
+        self.notesData = Data()
+    }
+
+    /// Completion notes keyed by dateKey (same format as completedDates entries)
+    var notes: [String: String] {
+        get { (try? JSONDecoder().decode([String: String].self, from: notesData)) ?? [:] }
+        set { notesData = (try? JSONEncoder().encode(newValue)) ?? Data() }
     }
 
     var schedule: RepeatSchedule {

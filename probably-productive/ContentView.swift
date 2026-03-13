@@ -35,6 +35,8 @@ struct HabitsView: View {
     @State private var burstAmount: Int? = nil
     @State private var burstID = UUID()
     @State private var selectedCategory: HabitCategory? = nil
+    @State private var pendingNoteHabit: Habit? = nil
+    @State private var pendingNoteKey: String = ""
 
     private var categoriesInUse: [HabitCategory] {
         let all = store.habits + store.notDueHabits
@@ -103,9 +105,16 @@ struct HabitsView: View {
                         selectedHabit = habit
                     } label: {
                         HabitRow(habit: habit) {
+                            let key = habit.schedule == .hourly
+                                ? Habit.hourSlotKey(for: .now, interval: habit.hourlyInterval)
+                                : Habit.dateString(for: .now)
                             let earned = store.toggle(habit)
                             burstAmount = earned ? 10 : -10
                             burstID = UUID()
+                            if earned {
+                                pendingNoteHabit = habit
+                                pendingNoteKey = key
+                            }
                         }
                     }
                     .buttonStyle(.plain)
@@ -198,6 +207,11 @@ struct HabitsView: View {
             }
             .sheet(isPresented: $showingReminders) {
                 RemindersSheet()
+            }
+            .sheet(item: $pendingNoteHabit) { habit in
+                HabitNoteSheet(habit: habit, dateKey: pendingNoteKey) { note in
+                    store.saveNote(note, for: habit, dateKey: pendingNoteKey)
+                }
             }
             .overlay {
                 if store.habits.isEmpty && store.notDueHabits.isEmpty {
@@ -942,12 +956,49 @@ struct HabitDetailSheet: View {
                     habitHeader
                     statsRow
                     calendarSection
+                    if !habit.notes.isEmpty {
+                        notesSection
+                    }
                 }
                 .padding()
             }
             .navigationTitle(habit.name)
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    private var notesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Notes")
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            ForEach(habit.notes.sorted { $0.key > $1.key }, id: \.key) { key, note in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(formattedNoteKey(key))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(note)
+                        .font(.body)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+            }
+        }
+    }
+
+    private func formattedNoteKey(_ key: String) -> String {
+        let parts = key.split(separator: " ")
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        guard let date = formatter.date(from: String(parts[0])) else { return key }
+        let display = DateFormatter()
+        display.dateStyle = .medium
+        display.timeStyle = .none
+        var result = display.string(from: date)
+        if parts.count > 1 { result += " at \(parts[1]):00" }
+        return result
     }
 
     private var habitHeader: some View {
@@ -1043,13 +1094,15 @@ struct HabitDetailSheet: View {
                 ForEach(Array(monthDays.enumerated()), id: \.offset) { _, date in
                     if let date {
                         let ds = Habit.dateString(for: date)
-                        let completed = habit.completedDates.contains(ds)
+                        let completed = habit.completedDates.contains { $0 == ds || $0.hasPrefix(ds + " ") }
                         let isToday = ds == Habit.dateString(for: .now)
+                        let hasNote = habit.notes.keys.contains { $0 == ds || $0.hasPrefix(ds + " ") }
                         HabitDayCell(
                             date: date,
                             completed: completed,
                             isToday: isToday,
-                            color: habit.color
+                            color: habit.color,
+                            hasNote: hasNote
                         )
                     } else {
                         Color.clear.frame(height: 44)
@@ -1067,26 +1120,85 @@ struct HabitDayCell: View {
     let completed: Bool
     let isToday: Bool
     let color: Color
+    var hasNote: Bool = false
 
     private var dayNumber: String {
         String(Calendar.current.component(.day, from: date))
     }
 
     var body: some View {
-        Text(dayNumber)
-            .font(.caption2)
-            .fontWeight(isToday ? .bold : .regular)
-            .foregroundStyle(completed ? .white : (isToday ? color : .secondary))
-            .frame(maxWidth: .infinity)
-            .frame(height: 44)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(completed ? color.opacity(0.85) : (isToday ? color.opacity(0.12) : Color.clear))
-            )
+        ZStack {
+            Text(dayNumber)
+                .font(.caption2)
+                .fontWeight(isToday ? .bold : .regular)
+                .foregroundStyle(completed ? .white : (isToday ? color : .secondary))
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(completed ? color.opacity(0.85) : (isToday ? color.opacity(0.12) : Color.clear))
+                )
+            if hasNote {
+                VStack {
+                    Spacer()
+                    Circle()
+                        .fill(completed ? .white.opacity(0.8) : color)
+                        .frame(width: 4, height: 4)
+                        .padding(.bottom, 4)
+                }
+                .frame(height: 44)
+            }
+        }
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(completed && isToday ? Color.white.opacity(0.6) : Color.clear, lineWidth: 2)
             )
+    }
+}
+
+// MARK: - Habit Note Sheet
+
+struct HabitNoteSheet: View {
+    let habit: Habit
+    let dateKey: String
+    let onSave: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var noteText = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 12) {
+                TextField("What happened? No pressure.", text: $noteText, axis: .vertical)
+                    .lineLimit(3...6)
+                    .focused($focused)
+                    .padding()
+                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal)
+                Spacer()
+            }
+            .padding(.top, 8)
+            .navigationTitle("Add a note")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Skip") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        onSave(noteText)
+                        dismiss()
+                    }
+                    .disabled(noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.height(220)])
+        .onAppear {
+            noteText = habit.notes[dateKey] ?? ""
+            focused = true
+        }
     }
 }
 

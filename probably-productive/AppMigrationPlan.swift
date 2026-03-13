@@ -122,18 +122,47 @@ enum AppSchemaV5: VersionedSchema {
     }
 }
 
-// MARK: - Schema V6: Current (adds categoryRaw)
+// MARK: - Schema V6: Snapshot (adds categoryRaw)
 
 enum AppSchemaV6: VersionedSchema {
     static var versionIdentifier = Schema.Version(6, 0, 0)
+    static var models: [any PersistentModel.Type] = [AppSchemaV6.Habit.self, MoodEntry.self, AppState.self]
+
+    @Model
+    final class Habit {
+        var id: UUID = UUID()
+        var name: String = ""
+        var completedDates: [String] = []
+        var colorName: String = "blue"
+        var iconName: String = "checkmark"
+        var sortOrder: Int = 0
+        var isArchived: Bool = false
+        var scheduleRaw: String = "daily"
+        var scheduledTime: Date? = nil
+        var hourlyInterval: Int = 2
+        var scheduleEndTime: Date? = nil
+        var categoryRaw: String = "other"
+
+        init(name: String) {
+            self.id = UUID()
+            self.name = name
+            self.completedDates = []
+        }
+    }
+}
+
+// MARK: - Schema V7: Current (adds notesData)
+
+enum AppSchemaV7: VersionedSchema {
+    static var versionIdentifier = Schema.Version(7, 0, 0)
     static var models: [any PersistentModel.Type] = [Habit.self, MoodEntry.self, AppState.self]
 }
 
 // MARK: - Migration Plan
 
 enum AppMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] = [AppSchemaV1.self, AppSchemaV2.self, AppSchemaV3.self, AppSchemaV4.self, AppSchemaV5.self, AppSchemaV6.self]
-    static var stages: [MigrationStage] = [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5, migrateV5toV6]
+    static var schemas: [any VersionedSchema.Type] = [AppSchemaV1.self, AppSchemaV2.self, AppSchemaV3.self, AppSchemaV4.self, AppSchemaV5.self, AppSchemaV6.self, AppSchemaV7.self]
+    static var stages: [MigrationStage] = [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5, migrateV5toV6, migrateV6toV7]
 
     static let migrateV1toV2 = MigrationStage.custom(
         fromVersion: AppSchemaV1.self,
@@ -168,5 +197,10 @@ enum AppMigrationPlan: SchemaMigrationPlan {
     static let migrateV5toV6 = MigrationStage.lightweight(
         fromVersion: AppSchemaV5.self,
         toVersion: AppSchemaV6.self
+    )
+
+    static let migrateV6toV7 = MigrationStage.lightweight(
+        fromVersion: AppSchemaV6.self,
+        toVersion: AppSchemaV7.self
     )
 }
