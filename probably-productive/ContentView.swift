@@ -939,13 +939,13 @@ struct HabitDetailSheet: View {
         let total = isCurrentMonth
             ? calendar.component(.day, from: .now)
             : (calendar.range(of: .day, in: .month, for: displayedMonth)?.count ?? 0)
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        let done = habit.completedDates.filter { ds in
-            guard let date = formatter.date(from: ds) else { return false }
-            return calendar.component(.year, from: date) == year &&
-                   calendar.component(.month, from: date) == month
-        }.count
+        // Use prefix match to handle both "yyyy-MM-dd" and "yyyy-MM-dd HH" (hourly) formats
+        let monthPrefix = String(format: "%04d-%02d", year, month)
+        let done = Set(
+            habit.completedDates
+                .filter { $0.hasPrefix(monthPrefix) }
+                .map { String($0.prefix(10)) }  // normalize to "yyyy-MM-dd"
+        ).count
         return (done, total)
     }
 

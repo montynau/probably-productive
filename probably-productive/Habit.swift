@@ -370,13 +370,23 @@ class Habit {
                 return w == 1 || w == 7
             })
         default:
-            // For weekly+, longest streak = all unique periods completed
             return periodicStreak { d in
                 let cal = Calendar.current
                 switch schedule {
-                case .weekly: return "\(cal.component(.yearForWeekOfYear, from: d))-W\(cal.component(.weekOfYear, from: d))"
-                case .monthly: return "\(cal.component(.year, from: d))-\(cal.component(.month, from: d))"
-                default: return Self.dateString(for: d)
+                case .weekly:
+                    return "\(cal.component(.yearForWeekOfYear, from: d))-W\(cal.component(.weekOfYear, from: d))"
+                case .monthly:
+                    return "\(cal.component(.year, from: d))-\(cal.component(.month, from: d))"
+                case .quarterly:
+                    let q = (cal.component(.month, from: d) - 1) / 3
+                    return "\(cal.component(.year, from: d))-Q\(q)"
+                case .semiannually:
+                    let h = (cal.component(.month, from: d) - 1) / 6
+                    return "\(cal.component(.year, from: d))-H\(h)"
+                case .yearly:
+                    return "\(cal.component(.year, from: d))"
+                default:
+                    return Self.dateString(for: d)
                 }
             }
         }
